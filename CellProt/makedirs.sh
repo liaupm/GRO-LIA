@@ -1,0 +1,17 @@
+mkdir build
+cd build
+mkdir mac
+mkdir linux
+mkdir win
+cd mac
+mkdir debug
+mkdir release
+cd ..
+cd linux
+mkdir debug
+mkdir release
+cd ..
+cd win
+mkdir debug
+mkdir release
+cd ..

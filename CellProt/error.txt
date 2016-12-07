@@ -1,0 +1,2 @@
+g++ -Wall -Wextra -g -c -Iinclude/ -std=c++11  -c -o build/win/debug//GenCell.o src//GenCell.cpp
+Makefile:61: recipe for target 'build/win/debug//GenCell.o' failed

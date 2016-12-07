@@ -1,0 +1,29 @@
+MOUSE:
+left click => move the camera
+right click => select a body or bodies if draw a rectangle with the mouse.
+
+KEYBOARD:
+escape => exit the program
+z => reset camera
+x => reset simulation
+p => pause
+space => when the simulation is paused, each space pressed compute 1 frame
+u => increase iterations
+y => decrease iterations
+m => increase growthrate
+n => decrease growthrate
+j => increase thrustRelation
+k => decrease thrustRelation
+a => rotate anticlock-wise the selected bodies
+s => rotate clock-wise the selected bodies
+t => enable/disable spatial table
+b => enable/disable occupied boxes
+l => enable/disable limits
+c => enable/disable conjugation viewer
+d => enable/disable segment points
+g => enable/disable number of bodies per box
+r => enable/disable visual rings
+h => enable/disable view by rotations
+f => enable/disable pneumatic effect view
+1 => write in a file the neighbors of each body
+2 => write in a file the pneumatic effect by each body
