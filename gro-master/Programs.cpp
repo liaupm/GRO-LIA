@@ -30,7 +30,7 @@
 #define RNA Q[0]
 #define PROTEIN Q[1]
 
-void GFP_Program::init ( World * world ) {
+/*void GFP_Program::init ( World * world ) {
 
   EColi * c = new EColi ( world, 0, 0, 0.78, 2*WIDTH );
 
@@ -210,4 +210,4 @@ void LeaderElection::update ( World * world, Cell * cell ) {
 
 void LeaderElection::destroy ( World * ) {
 
-}
+}*/

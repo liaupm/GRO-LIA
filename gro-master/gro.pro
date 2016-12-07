@@ -53,7 +53,7 @@ SOURCES += main.cpp\
     GroThread.cpp \
     GroWidget.cpp \
     Messages.cpp \
-    Programs.cpp \
+    #Programs.cpp \
     Signal.cpp \
     Themes.cpp \
     Utility.cpp \

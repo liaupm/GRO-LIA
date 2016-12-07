@@ -53,7 +53,6 @@ SOURCES       = ../gro-master/main.cpp \
 		../gro-master/GroThread.cpp \
 		../gro-master/GroWidget.cpp \
 		../gro-master/Messages.cpp \
-		../gro-master/Programs.cpp \
 		../gro-master/Signal.cpp \
 		../gro-master/Themes.cpp \
 		../gro-master/Utility.cpp \
@@ -72,7 +71,6 @@ OBJECTS       = main.o \
 		GroThread.o \
 		GroWidget.o \
 		Messages.o \
-		Programs.o \
 		Signal.o \
 		Themes.o \
 		Utility.o \
@@ -263,7 +261,6 @@ DIST          = ../../../Qt5.7.0/5.7/clang_64/mkspecs/features/spec_pre.prf \
 		../gro-master/GroThread.cpp \
 		../gro-master/GroWidget.cpp \
 		../gro-master/Messages.cpp \
-		../gro-master/Programs.cpp \
 		../gro-master/Signal.cpp \
 		../gro-master/Themes.cpp \
 		../gro-master/Utility.cpp \
@@ -651,7 +648,7 @@ distdir: FORCE
 	$(COPY_FILE) --parents $(DIST) $(DISTDIR)/
 	$(COPY_FILE) --parents ../gro-master/icons.qrc $(DISTDIR)/
 	$(COPY_FILE) --parents ../gro-master/gui.h ../gro-master/GroThread.h ../gro-master/GroWidget.h ../gro-master/Defines.h ../gro-master/Programs.h ../gro-master/Utility.h ../gro-master/Micro.h ../gro-master/GroPainter.h ../gro-master/Theme.h ../gro-master/EColi.h ../gro-master/Cell.h ../gro-master/ui_gui.h ../gro-master/Yeast.h $(DISTDIR)/
-	$(COPY_FILE) --parents ../gro-master/main.cpp ../gro-master/gui.cpp ../gro-master/GroThread.cpp ../gro-master/GroWidget.cpp ../gro-master/Messages.cpp ../gro-master/Programs.cpp ../gro-master/Signal.cpp ../gro-master/Themes.cpp ../gro-master/Utility.cpp ../gro-master/World.cpp ../gro-master/EColi.cpp ../gro-master/Gro.cpp ../gro-master/GroPainter.cpp ../gro-master/Cell.cpp ../gro-master/reaction.cpp ../gro-master/Yeast.cpp $(DISTDIR)/
+	$(COPY_FILE) --parents ../gro-master/main.cpp ../gro-master/gui.cpp ../gro-master/GroThread.cpp ../gro-master/GroWidget.cpp ../gro-master/Messages.cpp ../gro-master/Signal.cpp ../gro-master/Themes.cpp ../gro-master/Utility.cpp ../gro-master/World.cpp ../gro-master/EColi.cpp ../gro-master/Gro.cpp ../gro-master/GroPainter.cpp ../gro-master/Cell.cpp ../gro-master/reaction.cpp ../gro-master/Yeast.cpp $(DISTDIR)/
 	$(COPY_FILE) --parents ../gro-master/gui.ui $(DISTDIR)/
 
 
@@ -1363,33 +1360,6 @@ Messages.o: ../gro-master/Messages.cpp ../gro-master/Micro.h \
 		../gro-master/Utility.h \
 		../gro-master/Theme.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o Messages.o ../gro-master/Messages.cpp
-
-Programs.o: ../gro-master/Programs.cpp ../gro-master/Programs.h \
-		../gro-master/Micro.h \
-		../gro-master/GroPainter.h \
-		../../../Qt5.7.0/5.7/clang_64/lib/QtGui.framework/Headers/QPainter \
-		../../../Qt5.7.0/5.7/clang_64/lib/QtGui.framework/Headers/qpainter.h \
-		../ccl-master/ccl.h \
-		../ccl-master/SymbolTable.h \
-		../ccl-master/Expr.h \
-		../ccl-master/Type.h \
-		../ccl-master/Program.h \
-		../ccl-master/Schedulers.h \
-		../ccl-master/parser.h \
-		../gro-master/Cell.h \
-		../CellEngine/include/CellEngine.h \
-		../CellEngine/include/CEVector2.h \
-		../CellEngine/include/CEBody.h \
-		../CellEngine/include/CESpace.h \
-		../CellNutrient/include/CellNutrient.h \
-		../CellNutrient/include/CNGrid.h \
-		../CellNutrient/include/CNvector.h \
-		../CellNutrient/include/CNNutrients.h \
-		../gro-master/Defines.h \
-		../gro-master/Utility.h \
-		../gro-master/Theme.h \
-		../gro-master/EColi.h
-	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o Programs.o ../gro-master/Programs.cpp
 
 Signal.o: ../gro-master/Signal.cpp ../gro-master/Micro.h \
 		../gro-master/GroPainter.h \
