@@ -268,6 +268,13 @@ class World {
 
   inline bool initialized (void ) { return program_initialized; }
 
+
+  inline bool getNoProt (void ) { return noprot; }
+  inline void setNoProt (bool v) { noprot = v; }
+
+  inline bool getNoAction (void ) { return noaction; }
+  inline void setNoAction (bool v) { noaction = v; }
+
   // note that if the parameter doesn't exist, the [] operator will insert it
   // with a default value, which I assume would be 0.0 for a float.
   inline float get_param ( std::string str ) { return parameters[str]; }
@@ -426,6 +433,8 @@ class World {
   MessageHandler message_handler;
   float zoom;
   std::list<Barrier> * barriers;
+
+  bool noprot, noaction;
 
   std::vector<std::map<std::string, int> > action_prot_list;
   std::vector<std::list<std::string> > action_param_list; //lista de parametros de funciones

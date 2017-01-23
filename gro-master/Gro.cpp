@@ -780,6 +780,7 @@ Value *new_operon (std::list<Value *> * args, Scope * s )
             }
         }
         world->get_globalPlasmidList()->getPlasmidById("listPP0")->insertOperon(operon_name, op);
+        world->setNoProt(false);
     }
     return new Value ( Value::UNIT );
 }
@@ -893,6 +894,7 @@ Value * set_action (std::list<Value *> * args, Scope * s ) {
     }
     world->add_action_param(params);
     world->set_num_actions(world->get_num_actions()+1);
+    world->setNoAction(false);
     return new Value ( Value::UNIT );
 }
 

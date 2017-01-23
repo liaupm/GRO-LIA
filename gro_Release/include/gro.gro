@@ -1,0 +1,197 @@
+//////////////////////////////////////////////////////////////////////////////////////
+//
+// gro is protected by the UW OPEN SOURCE LICENSE, which is summaraize here.
+// Please see the file LICENSE.txt for the complete license.
+//
+// THE SOFTWARE (AS DEFINED BELOW) AND HARDWARE DESIGNS (AS DEFINED BELOW) IS PROVIDED
+// UNDER THE TERMS OF THIS OPEN SOURCE LICENSE (“LICENSE”).  THE SOFTWARE IS PROTECTED
+// BY COPYRIGHT AND/OR OTHER APPLICABLE LAW.  ANY USE OF THIS SOFTWARE OTHER THAN AS
+// AUTHORIZED UNDER THIS LICENSE OR COPYRIGHT LAW IS PROHIBITED.
+//
+// BY EXERCISING ANY RIGHTS TO THE SOFTWARE AND/OR HARDWARE PROVIDED HERE, YOU ACCEPT AND
+// AGREE TO BE BOUND BY THE TERMS OF THIS LICENSE.  TO THE EXTENT THIS LICENSE MAY BE
+// CONSIDERED A CONTRACT, THE UNIVERSITY OF WASHINGTON (“UW”) GRANTS YOU THE RIGHTS
+// CONTAINED HERE IN CONSIDERATION OF YOUR ACCEPTANCE OF SUCH TERMS AND CONDITIONS.
+//
+// TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
+//
+//
+
+include standard
+
+// Cell types
+internal unit ecoli ( [ ... ], 'a ) "ecoli";
+//internal unit ecoli ( [ ... ], string list, string list, string list, 'a ) "ecoli";
+internal unit c_ecolis ( int, real, real, real, string list, string list, string list, 'a) "c_ecolis";
+//internal unit c_ecolis ( int, real, real, real, 'a) "c_ecolis";
+// internal unit yeast ( [ ... ], 'a ) "yeast";
+
+// Signals
+internal int signal ( real, real ) "signal";
+internal unit set_signal ( int, real, real, real ) "set_signal";
+internal unit set_signal_rect ( int, real, real, real, real, real ) "set_signal_rect";
+internal real get_signal ( int ) "get_signal";
+internal unit emit_signal ( int, real ) "emit_signal";
+internal unit absorb_signal ( int, real ) "absorb_signal";
+internal unit reaction ( int list, int list, real ) "reaction";
+internal real list list get_signal_matrix ( int ) "get_signal_matrix";
+
+// World control
+internal unit message ( int, string ) "message";
+internal unit clear_messages ( int ) "clear_messages";
+internal unit reset () "reset";
+internal unit stop () "stop";
+internal unit start () "start";
+internal real stats ( string ) "stats";
+internal unit snapshot ( string ) "snapshot";
+internal unit dump ( int ) "dump";
+internal unit dump_single ( int ) "dump_single";
+internal unit dump_multiple ( ... ) "dump_multiple";
+internal unit dump_multiple_plasmids ( ... ) "dump_multiple_plasmids";
+internal real time() "time";
+
+// Gene Expression
+internal unit genes ([...]) "genes";
+internal unit plasmids_genes ([...]) "plasmids_genes";
+internal unit action (...) "action";
+internal unit reset_actions () "reset_actions";
+
+// Nutrients
+//internal real my_d_vol () "my_d_vol";
+internal real available () "available";
+
+//Cellsignals
+internal unit grid ( string, string, int, int, int ) "grid";
+internal int s_signal ( [...] ) "s_signal";
+internal unit s_add_reaction ( int list, int list, real) "s_add_reaction";
+internal int cf_signal ( real, real, real ) "cf_signal";
+internal int s_cf_signal ( real, real, real, real ) "s_cf_signal";
+internal unit s_set_signal ( int, real, real, real ) "s_set_signal";
+internal unit s_set_signal_rect ( int, real, real, real, real, real ) "s_set_signal_rect";
+internal real s_get_signal ( int ) "s_get_signal";
+internal real s_get_signal_area ( int ) "s_get_signal_area";
+internal unit s_emit_signal ( int, real, string ) "s_emit_signal";
+internal unit s_emit_signal_point (int, real, real, real) "s_emit_signal_point";
+internal unit s_emit_signal_area ( int, real ) "s_emit_signal_area";
+internal unit s_absorb_signal ( int, real, string ) "s_absorb_signal";
+internal unit s_absorb_signal_area ( int, real ) "s_absorb_signal_area";
+
+internal unit s_emit_cf_signal ( int, real, string ) "s_emit_cf_signal";
+internal real s_absorb_cf_signal ( int, real, int, string ) "s_absorb_cf_signal";
+internal real s_get_cf_signal ( int, real, int ) "s_get_cf_signal";
+
+// Themes
+dark_theme := [
+
+  background := "#000000",
+  ecoli_edge := "#444444",
+  ecoli_selected := "#880000",
+
+  signals := {
+    { 1, 0, 1 },
+    { 0, 1, 1 },
+    { 1, 1, 0 },
+    { 1, 0, 0 },
+    { 0, 1, 0 },
+    { 0, 0, 1 }
+  },
+
+  chemostat := "#444499",
+  message := "#ffffff",
+  mouse := "#ffffff"
+
+];
+
+bright_theme := [
+
+  background := "#ffffff",
+  ecoli_edge := "#777777",
+  ecoli_selected := "#ff0000",
+
+  signals := {
+    { 1, 0, 1 },
+    { 0, 1, 1 },
+    { 1, 1, 0 },
+    { 1, 0, 0 },
+    { 0, 1, 0 },
+    { 0, 0, 1 }
+  },
+
+  chemostat := "#999999",
+  message := "#999999",
+  mouse := "#000000"
+
+];
+
+internal unit set_theme ( [ ... ] ) "set_theme";
+set_theme ( bright_theme );
+internal unit zoom ( real ) "zoom";
+
+// Signals
+
+// Chemostat
+internal unit chemostat ( bool ) "chemostat";
+internal unit barrier ( real, real, real, real ) "barrier";
+
+// Cell specific
+internal unit die() "die";
+internal unit divide() "divide";
+internal unit run ( real ) "run";
+internal unit tumble ( real ) "tumble";
+internal [ ... ] geometry() "geometry";
+
+// Parameter Values
+internal unit set ( string, real ) "set";
+
+// default global parameters
+set ( "dt", 0.02 );
+set ( "gfp_saturation_min", 0.0 );
+set ( "gfp_saturation_max", 50.0 );
+set ( "rfp_saturation_min", 0.0 );
+set ( "rfp_saturation_max", 50.0 );
+set ( "yfp_saturation_min", 0.0 );
+set ( "yfp_saturation_max", 50.0 );
+set ( "cfp_saturation_min", 0.0 );
+set ( "cfp_saturation_max", 50.0 );
+
+set ( "chemostat_width",  200 );
+set ( "chemostat_height", 200 );
+
+set ( "throttle", 0.0 );
+set ( "population_max", 1000 );
+
+// signal parameters. Note: if you redefine these, do so before you
+// declare any signals. The parameters can't be changed after signals are declared,
+// and they apply to all of signals you declare.
+set ( "signal_grid_width", 800 );
+set ( "signal_grid_height", 800 );
+set ( "signal_element_size", 5 );
+
+// default paramters for E. coli
+set ( "ecoli_growth_rate", 0.0346574 );   // reactions/min
+set ( "ecoli_init_length", 2.0 );           //um
+set ( "ecoli_division_length_mean", 3.75 ); // um
+set ( "ecoli_division_size_variance", 0.005 ); // um
+set ( "ecoli_diameter", 1.0 );            // um
+set ( "ecoli_scale", 10.0 );              // pixels/um
+
+// default nutrient parameters
+set ("nutrients", 0.0); //0.0: off, 1.0: on
+set ("nutrient_amount", 200.0); //Arbitrary units
+set ("nutrient_consumption_rate", 0.033); // Units/dt per bacterium
+set ("nutrient_grid_length", 10.0); //In grid cells
+set ("nutrient_grid_cell_size", 30.0); //In pixels
+set ("nutrient_consumption_mode", 0.0); //0: Homogeneous, 1: Gradient
+
+//default parameters for signals (Sandra)
+set ("signals", 0.0); //0.0: off, 1.0: on
+set ("signals_grid_length", 10.0); //In grid cells
+set ("signals_grid_cell_size", 30.0); //In pixels
+
+// default parameters for Yeast
+set ( "yeast_growth_rate", 0.015 );
+set ( "yeast_division_size_mean", 1.0 );
+set ( "yeast_division_size_variance", 0.0001 );
+
+// Random generator parameter
+set ( "seed", 0.0 );

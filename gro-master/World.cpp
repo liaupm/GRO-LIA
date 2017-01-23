@@ -53,6 +53,9 @@ World::World ( GroThread *ct ) : calling_thread ( ct ) {
     signal_concs.clear();
     s_signal_id = 0;
 
+    noprot = true;
+    noaction = true;
+
     set_sim_dt ( DEFAULT_SIM_DT );
     set_chip_dt ( DEFAULT_CHIP_DT );
 
@@ -943,8 +946,14 @@ void World::update ( void ) {
                 available = consumption[indice];
             }
 
-            (*j)->getPlasmidList()->macroPlasmid(this->t);
-            (*j)->check_action();
+            if(!noprot)
+            {
+                (*j)->getPlasmidList()->macroPlasmid(this->t);
+            }
+            if(!noaction)
+            {
+                (*j)->check_action();
+            }
             (*j)->update();
 
             // check for divisions
