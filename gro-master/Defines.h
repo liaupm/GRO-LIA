@@ -25,7 +25,13 @@
 #define MIN_LENGTH 20
 #define MAX_LENGTH 40
 
+#define NUTRIENTS 200.0
+//Calculo: numero de moleculas(NUTRIENTS) / dts por generacion * numero de generaciones
+#define TASA 0.033
+#define VARIABILITY 0.2
+
 #define MAX_STATE_NUM 10
+
 
 /*#define DAMPING 0.001f
 #define ITERATIONS 100

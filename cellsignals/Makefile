@@ -6,30 +6,36 @@ endif
 
 ifeq ($(OS),Windows_NT)
         OS_DIR=win
+	COMP = g++
 else
         UNAME_S := $(shell uname -s)
         ifeq ($(UNAME_S),Linux)
                 OS_DIR=linux
+		COMP = g++
         endif
         ifeq ($(UNAME_S),Darwin)
                 OS_DIR=mac
+		COMP = clang++
         endif
 endif
 
 ifeq ($(MODE),release)
-        CC = clang++ -std=c++11 -stdlib=libc++ -Wall -Wextra -O3 -I$(INCLUDE) 
+	ifeq ($(COMP),g++)
+		CC = g++ -Wall -Wextra -O3 -c -I$(INCLUDE) -std=c++11
+        else	
+		CC = clang++ -std=c++11 -stdlib=libc++ -Wall -Wextra -O3 -I$(INCLUDE) 
+	endif
 else
-        #CC = g++ -Wall -Wextra -g -c -I$(INCLUDE) -std=c++11 #Debug
-        #CC = clang++ -std=c++11 -stdlib=libc++ -Wall -Wextra -g -I$(INCLUDE)
-        CC = clang++ -std=c++11 -Wall -Wextra -g -I$(INCLUDE)
-endif
-
-ifeq ($(OS_DIR),mac)
-	CC += -mmacosx-version-min=10.8
+        ifeq ($(COMP), g++)
+		CC = g++ -Wall -Wextra -g -c -I$(INCLUDE) -std=c++11
+        else
+		CC = clang++ -std=c++11 -Wall -Wextra -g -I$(INCLUDE)
+	endif
 endif
 
 INCLUDE=include
-BUILD=build/$(OS_DIR)/$(MODE)
+BUILD=build/$(OS_DIR)/$(MODE)/
+#BUILD=build/$(OS_DIR)/debug/
 SRC=src
 
 #CXXFLAGS = -m64
@@ -44,9 +50,9 @@ AR = ar -rs
 #AR = x86_64-apple-darwin1X-ar -rs
 
 
-OBJECTS=$(BUILD)/GCell.o $(BUILD)/Grid.o $(BUILD)/Core.o
+OBJECTS=$(BUILD)/CSCell.o $(BUILD)/DBCell.o $(BUILD)/Grid.o $(BUILD)/Diffusion.o $(BUILD)/_structures.o
 OUTPUT=$(BUILD)/libsignals.a
-INCLUDES=$(INCLUDE)/GCell.h $(INCLUDE)/Grid.h $(INCLUDE)/GSignal.h $(INCLUDE)/Core.h
+INCLUDES=$(INCLUDE)/GCell.h $(INCLUDE)/CSCell.h $(INCLUDE)/DBCell.h $(INCLUDE)/Grid.h $(INCLUDE)/GSignal.h $(INCLUDE)/GReaction.h $(INCLUDE)/_structures.h
 
 all: $(OUTPUT)
 

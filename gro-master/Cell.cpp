@@ -27,6 +27,7 @@
 #include <vector>
 #include <string>
 #include <cstdlib>
+#include <algorithm>
 #include "Rands.h"
 #include "CESpace.h"
 
@@ -37,6 +38,7 @@ Cell::Cell ( World * w ) : world ( w ), gro_program(NULL), marked(false), select
 
   parameters = w->get_param_map();
   compute_parameter_derivatives();
+  w->init_actions_map();
 
   program = w->get_program();
   space = w->get_space();
@@ -49,17 +51,962 @@ Cell::Cell ( World * w ) : world ( w ), gro_program(NULL), marked(false), select
   divided = false;
   daughter = false;
 
+  plasEnv = new GenPlasmid("0","Plas_env");
+  plasmidList = new GenListPlasmid("listP", plasEnv);
+
+  cross_input_coefficient = 1.0;
+  cross_output_coefficient = 1.0;
+
+  n_prots = 0;
+
   set_id ( max_id++ );
 
 }
 
 Cell::~Cell ( void ) {
 
-  //cpSpaceRemoveShape(world->get_space(),shape);
-  //cpShapeFree ( shape );
+  delete plasmidList;
+  delete plasEnv;
 
   if ( gro_program != NULL ) {
     delete gro_program;
   }
+
+}
+
+float Cell::get_gt_inst()
+{
+    return this->gt_inst;
+}
+
+int Cell::getNProts()
+{
+    return this->n_prots;
+}
+
+void Cell::setNProts(int v)
+{
+    this->n_prots = v;
+}
+
+void Cell::conjugate(std::string name, double n_conj, int mode)
+{
+    double r = fRand(0.00000000000000, 1.000000000000000);
+    double p = 0;
+    unsigned int size;
+    int nc = 4;
+    int target;
+    int seen = 0;
+    double dete = world->get_sim_dt();
+    ceBody** neighbors = ceGetNearBodies(this->body,0.5,&size);
+    std::vector<GenPlasmid*>* found = this->plasmidList->getPlasmidByName(name);
+    GenPlasmid* toConj = NULL;
+
+    if(found->size() == 1)
+    {
+        toConj = found->at(0);
+
+        if(size < nc)
+        {
+            p = ((n_conj * dete)/(this->gt_inst))*((double)((double)size/(double)nc));
+        }
+        else
+        {
+            p = ((n_conj * dete)/(this->gt_inst));
+        }
+        if(r < p && mode == UNDIRECTED)
+        {
+            target = rand()%size;
+            if(!(((Cell*)(neighbors[target]->data))->marked_for_death()) &&
+                    !(this->marked_for_death()) &&
+                    !((Cell*)(neighbors[target]->data))->getPlasmidList()->isAvoidPlasmid(toConj))
+            {
+                ((Cell*)(neighbors[target]->data))->getPlasmidList()->insertPlasmidConj(toConj);
+                toConj = ((Cell*)(neighbors[target]->data))->getPlasmidList()->getPlasmid(((Cell*)(neighbors[target]->data))->getPlasmidList()->getSize()-1);
+                toConj->setParent(((Cell*)(neighbors[target]->data))->getPlasmidList());
+                toConj->setEnvPlasmid(((Cell*)(neighbors[target]->data))->getPlasmidList()->getEnvPlasmid());
+                toConj->setType(true);
+                toConj->setRNG(world->getRNG());
+                for(auto ops : *(toConj->getOperons()))
+                {
+                    ops->getPromoter()->setListPlasmid(((Cell*)(neighbors[target]->data))->getPlasmidList());
+                    ops->setNoise(world->get_time(), world->get_sim_dt());
+                }
+            }
+            free(neighbors);
+        }
+
+        else if(r < p && mode == DIRECTED)
+        {
+            target = rand() % size;
+            seen++;
+            while((
+                      !(((Cell*)(neighbors[target]->data))->marked_for_death()) &&
+                      !(this->marked_for_death()) && toConj != NULL &&
+                      (((Cell*)(neighbors[target]->data))->getPlasmidList()->isAvoidPlasmid(toConj))) &&
+                      seen < size)
+            {
+                target = (target + 1) % size;
+                seen++;
+            }
+            if(!(((Cell*)(neighbors[target]->data))->marked_for_death()) &&
+                    !(this->marked_for_death()) && toConj != NULL &&
+                    !(((Cell*)(neighbors[target]->data))->getPlasmidList()->isAvoidPlasmid(toConj)))
+            {
+                ((Cell*)(neighbors[target]->data))->getPlasmidList()->insertPlasmidConj(toConj);
+                toConj = ((Cell*)(neighbors[target]->data))->getPlasmidList()->getPlasmid(((Cell*)(neighbors[target]->data))->getPlasmidList()->getSize()-1);
+                toConj->setParent(((Cell*)(neighbors[target]->data))->getPlasmidList());
+                toConj->setEnvPlasmid(((Cell*)(neighbors[target]->data))->getPlasmidList()->getEnvPlasmid());
+                toConj->setType(true);
+                toConj->setRNG(world->getRNG());
+                for(auto ops : *(toConj->getOperons()))
+                {
+                    ops->getPromoter()->setListPlasmid(((Cell*)(neighbors[target]->data))->getPlasmidList());
+                    ops->setNoise(world->get_time(), world->get_sim_dt());
+                }
+            }
+            free(neighbors);
+        }
+    }
+}
+
+//Idea: Ingresar numero de senal como parametro, de modo que puedo seleccionar quienes son las bacterias en la zona que no están infectadas por fago X.
+float Cell::get_n_cells_d(float d_in_microns)
+{
+    float d_in_pixels = d_in_microns * DEFAULT_ECOLI_SCALE;
+    float n_neighbors = 0;
+    unsigned int size;
+    ceVector2 area_origin = ceGetVector2(this->body->center.x - (d_in_pixels), this->body->center.y - (d_in_pixels));
+    ceVector2 area_end = ceGetVector2(2*d_in_pixels, 2*d_in_pixels);
+    ceBody ** neighbors = ceGetBodies(world->get_space(), &size, area_origin, area_end );
+    //IDEA: Recorrer el listado de EColis que proviene de esta lista de Bodies (ver puntero data). Recordar distintas formas de identificar infeccion por el fago: Plasmido esta presente?
+    n_neighbors = (float)size;
+    return n_neighbors;
+}
+
+float Cell::area_concentration(int signal_id, float d_in_microns)
+{
+    double x = this->get_x();
+    double y = this->get_y();
+    float d_in_pixels = d_in_microns * DEFAULT_ECOLI_SCALE;
+    double x_length = d_in_pixels;
+    double y_length = d_in_pixels;
+
+    double coords[4];
+    coords[0] = x;
+    coords[1] = y;
+    coords[2] = x_length;
+    coords[3] = y_length;
+
+    float sig_val;
+    sig_val =  (float)world->handler->getSignalValue(signal_id,coords,"exact");
+    //printf("Get value: %f\n", sig_val);
+
+    if(sig_val != -1)
+    {
+       return sig_val;
+    }
+
+    return -1;
+
+}
+
+void Cell::check_action()
+{
+    bool result = true;
+    int num_actions = world->get_num_actions();
+    std::map<std::string, int> action_prots;
+    std::map<std::string, int> temp1;
+    std::map<std::string, int> temp2;
+    bool t1 = false, t2 = false, t3 = false;
+
+    for(int row=0;row<num_actions;++row){
+        result = true;
+        action_prots = world->get_action_prot(row);
+        if(!action_prots.empty())
+        {
+            for(auto ent1 = action_prots.begin(); (ent1 != action_prots.end() && result); ++ent1)
+            {
+                temp1 = this->getPlasmidList()->isGenActive(ent1->first);
+                temp2 = this->getPlasmidList()->isGenDeactive(ent1->first);
+                t1 = temp1.empty();
+                t2 = temp2.empty();
+                t3 = this->getPlasmidList()->isGenExist(ent1->first).empty();
+
+                if(!t1 && ent1->second == -1)
+                {
+                    result = false;
+                }
+                else if(!t2 && ent1->second == 1)
+                {
+                    result = false;
+                }
+                else if(t1 && ent1->second == 1)
+                {
+                    result = false;
+                }
+                else if(t3 && ent1->second == 1)
+                {
+                    result = false;
+                }
+            }
+        }
+
+        if(result){
+            FnPointer fp = world->get_action(world->get_action_name(row));
+            std::list<std::string> pl = world->get_action_param(row);
+            ((*this).*fp)(pl);
+        }
+    }
+}
+
+void Cell::paint_from_list(std::list<string> ls){
+    std::list<std::string>::iterator i = ls.begin();
+    int gfp = std::atoi((*i).c_str());i++;
+    int rfp = std::atoi((*i).c_str());i++;
+    int yfp = std::atoi((*i).c_str());i++;
+    int cfp = std::atoi((*i).c_str());
+    this->set_rep(GFP,gfp);
+    this->set_rep(RFP,rfp);
+    this->set_rep(YFP,yfp);
+    this->set_rep(CFP,cfp);
+}
+
+void Cell::delta_paint_from_list(std::list<string> ls){
+    std::list<std::string>::iterator i = ls.begin();
+    int gfp = 0, rfp = 0, yfp = 0, cfp = 0;
+    int d_gfp = std::atoi((*i).c_str());i++;
+    int d_rfp = std::atoi((*i).c_str());i++;
+    int d_yfp = std::atoi((*i).c_str());i++;
+    int d_cfp = std::atoi((*i).c_str());
+    gfp = this->get_rep(GFP);
+    rfp = this->get_rep(RFP);
+    yfp = this->get_rep(YFP);
+    cfp = this->get_rep(CFP);
+    if(gfp + d_gfp < 0)
+    {
+        gfp = 0;
+    }
+    else
+    {
+        gfp = gfp + d_gfp;
+    }
+    if(rfp + d_rfp < 0)
+    {
+        rfp = 0;
+    }
+    else
+    {
+        rfp = rfp + d_rfp;
+    }
+    if(yfp + d_yfp < 0)
+    {
+        yfp = 0;
+    }
+    else
+    {
+        yfp = yfp + d_yfp;
+    }
+    if(cfp + d_cfp < 0)
+    {
+        cfp = 0;
+    }
+    else
+    {
+        cfp = cfp + d_cfp;
+    }
+    this->set_rep(GFP,gfp);
+    this->set_rep(RFP,rfp);
+    this->set_rep(YFP,yfp);
+    this->set_rep(CFP,cfp);
+}
+
+
+void Cell::set_eex_from_list(std::list<string> ls)
+{
+    std::list<std::string>::iterator i = ls.begin();
+    std::vector<GenPlasmid*>* plasmids;
+    std::string plasmid_to_eex ((*i).c_str());
+
+    plasmids = world->get_globalPlasmidList()->getPlasmidByName(plasmid_to_eex);
+    if(plasmids->size() > 0 && !this->getPlasmidList()->isAvoidPlasmid(plasmids->at(0)))
+    {
+        this->getPlasmidList()->insertAvoidPlasmid(plasmids->at(0));
+    }
+}
+
+void Cell::remove_eex_from_list(std::list<string> ls)
+{
+    std::list<std::string>::iterator i = ls.begin();
+    std::vector<GenPlasmid*>* plasmids;
+    std::string plasmid_to_eex ((*i).c_str());
+
+    plasmids = world->get_globalPlasmidList()->getPlasmidByName(plasmid_to_eex);
+    if(plasmids->size() > 0)
+    {
+        this->getPlasmidList()->eraseAvoidPlasmid(plasmids->at(0));
+    }
+}
+
+void Cell::conjugate_from_list(std::list<std::string> ls){
+    std::list<std::string>::iterator i = ls.begin();
+    std::string id ((*i).c_str());
+    i++;
+    double n_conj = std::atof((*i).c_str());
+
+    conjugate(id, n_conj, UNDIRECTED);
+}
+
+void Cell::conjugate_directed_from_list(std::list<std::string> ls){
+    std::list<std::string>::iterator i = ls.begin();
+    std::string id ((*i).c_str());
+    i++;
+    double n_conj = std::atof((*i).c_str());
+
+    conjugate(id, n_conj, DIRECTED);
+}
+
+void Cell::lose_plasmid_from_list(std::list<std::string> ls){
+    std::list<std::string>::iterator i = ls.begin();
+    std::string name ((*i).c_str());
+    this->plasmidList->erasePlasmidByName(name);
+}
+
+void Cell::die_from_list(std::list<std::string> ls){
+    std::list<std::string>::iterator i = ls.begin();
+    int j = std::atoi((*i).c_str());
+    if ( this != NULL && !this->marked_for_death())
+        this->mark_for_death();
+    else
+        printf ( "Warning: Called die() from outside a cell program. No action taken\n" );
+}
+
+/*void Cell::conj_and_paint_from_list(std::list<std::string> ls){
+    std::list<std::string>::iterator i = ls.begin();
+    std::map<std::string,int> plasmids_Map = this->world->get_plasmids_map();
+    std::string plasmid_to_conj ((*i).c_str());
+    //int j = (std::atoi((*i).c_str()))-1;
+    int j = plasmids_Map[plasmid_to_conj];
+    i++;
+    double n_conj = std::atof((*i).c_str());
+    i++;
+    //double d_n_conj = (double)n_conj;
+    //print_state();
+    conjugate(j, n_conj);
+    int gfp = std::atoi((*i).c_str());i++;
+    int rfp = std::atoi((*i).c_str());i++;
+    int yfp = std::atoi((*i).c_str());i++;
+    int cfp = std::atoi((*i).c_str());
+    this->set_rep(GFP,gfp);
+    this->set_rep(RFP,rfp);
+    this->set_rep(YFP,yfp);
+    this->set_rep(CFP,cfp);
+}*/
+
+void Cell::change_gt_from_list(std::list<std::string> ls){
+    std::list<std::string>::iterator i = ls.begin();
+    float growth_rate = std::atof((*i).c_str());
+    this->set_param("ecoli_growth_rate", growth_rate);
+}
+
+void Cell::emit_cross_feeding_signal_from_list(std::list<std::string> ls)
+{
+    std::list<std::string>::iterator i = ls.begin();
+    int signal_id = std::atoi((*i).c_str());
+    float signal_conc = this->world->get_cross_feeding_max_emit(signal_id);
+    float dv_max = 0, dv = 0;
+
+    dv_max = get_param ( "ecoli_growth_rate_max" ) * this->get_volume() * this->world->get_sim_dt();
+    dv = this->get_d_vol();
+    this->cross_output_coefficient = dv/dv_max;
+    if(this->cross_output_coefficient > 1.0)
+    {
+        this->cross_output_coefficient = 1.0;
+    }
+    this->world->emit_signal(this,signal_id,(this->cross_output_coefficient*signal_conc));
+
+}
+
+void Cell::get_cross_feeding_signal_from_list(std::list<std::string> ls)
+{
+    std::list<std::string>::iterator i = ls.begin();
+    int signal_id = std::atoi((*i).c_str()); i++;
+    int benefit = std::atoi((*i).c_str());
+    float signal_level = world->get_signal_value ( this, signal_id );
+    float growth_rate = get_param( "ecoli_growth_rate_max" );
+
+    switch(benefit)
+    {
+        case 1:
+            this->cross_input_coefficient = (signal_level/(this->world->get_cross_feeding_max_emit(signal_id)));
+            break;
+        case -1:
+            this->cross_input_coefficient = (1 - (signal_level/(this->world->get_cross_feeding_max_emit(signal_id))));
+            break;
+        default:
+            this->cross_input_coefficient = 1;
+            break;
+    }
+    if(this->cross_input_coefficient > 1)
+    {
+        this->cross_input_coefficient = 1;
+    }
+    else if(this->cross_input_coefficient < 0)
+    {
+        this->cross_input_coefficient = 0;
+    }
+}
+
+void Cell::s_emit_signal_area(std::list<std::string> ls)
+{
+    std::list<std::string>::iterator i = ls.begin();
+    int signal_id = std::atoi((*i).c_str()); i++;
+    double conc = std::atof((*i).c_str()); i++;
+    std::string emision_type = *i;
+    double x = this->get_x();
+    double y = this->get_y();
+    double x_length = this->get_vec_x();
+    double y_length = this->get_vec_y();
+
+    double coords[4];
+    coords[0] = x;
+    coords[1] = y;
+    coords[2] = x_length;
+    coords[3] = y_length;
+
+    if (world->grid_type == "continuous") {
+       world->handler->emit_signal(signal_id, conc, coords, emision_type.c_str());
+    } else if (world->grid_type == "digital") {
+        world->dhandler->emit_signal(signal_id, conc, coords, emision_type.c_str());
+    }
+}
+
+void Cell::s_emit_signal(std::list<std::string> ls)
+{
+    std::list<std::string>::iterator i = ls.begin();
+    int signal_id = std::atoi((*i).c_str()); i++;
+    double conc = std::atof((*i).c_str()); i++;
+    std::string emision_type = *i;
+
+    double x = this->get_x();
+    double y = this->get_y();
+    double x_length = 0;
+    double y_length = 0;
+
+    double coords[4];
+    coords[0] = x;
+    coords[1] = y;
+    coords[2] = x_length;
+    coords[3] = y_length;
+
+    if (world->grid_type == "continuous") {
+       world->handler->emit_signal(signal_id, conc, coords, emision_type.c_str());
+    } else if (world->grid_type == "digital") {
+       world->dhandler->emit_signal(signal_id, conc, coords, emision_type.c_str());
+    }
+}
+
+void Cell::s_get_signal_area(std::list<std::string> ls)
+{
+    std::list<std::string>::iterator i = ls.begin();
+    int signal_id = std::atoi((*i).c_str());
+    double x = this->get_x();
+    double y = this->get_y();
+    double x_length = this->get_vec_x();
+    double y_length = this->get_vec_y();
+
+    double coords[4];
+    coords[0] = x;
+    coords[1] = y;
+    coords[2] = x_length;
+    coords[3] = y_length;
+
+    double sig_val;
+    if (world->grid_type == "continuous") {
+        sig_val =  world->handler->getSignalValue(signal_id,coords, "area");
+    } else if (world->grid_type == "digital") {
+        sig_val =  world->dhandler->getSignalValue(signal_id,coords, "area");
+    }
+
+    if(sig_val != -1)
+    {
+        world->signal_concs[signal_id] = sig_val;
+    }
+}
+
+void Cell::s_get_signal(std::list<std::string> ls)
+{
+    std::list<std::string>::iterator i = ls.begin();
+    int signal_id = std::atoi((*i).c_str());
+    double x = this->get_x();
+    double y = this->get_y();
+    double x_length = 0;
+    double y_length = 0;
+
+    double coords[4];
+    coords[0] = x;
+    coords[1] = y;
+    coords[2] = x_length;
+    coords[3] = y_length;
+
+    double sig_val;
+    if (world->grid_type == "continuous") {
+        sig_val =  world->handler->getSignalValue(signal_id,coords, "exact");
+    } else if (world->grid_type == "digital") {
+        sig_val =  world->dhandler->getSignalValue(signal_id,coords, "exact");
+    }
+
+    if(sig_val != -1)
+    {
+        world->signal_concs[signal_id] = sig_val;
+    }
+}
+
+void Cell::s_absorb_signal_area(std::list<std::string> ls)
+{
+    std::list<std::string>::iterator i = ls.begin();
+    int signal_id = std::atoi((*i).c_str()); i++;
+    double conc = std::atof((*i).c_str()); i++;
+    std::string absorb_type = *i;
+    double x = this->get_x();
+    double y = this->get_y();
+    double x_length = this->get_vec_x();
+    double y_length = this->get_vec_y();
+
+    double coords[4];
+    coords[0] = x;
+    coords[1] = y;
+    coords[2] = x_length;
+    coords[3] = y_length;
+
+    if (world->grid_type == "continuous") {
+       world->handler->absorb_signal(signal_id, conc, coords, absorb_type.c_str());
+    } else if (world->grid_type == "digital") {
+       world->dhandler->absorb_signal(signal_id, conc, coords, absorb_type.c_str());
+    }
+}
+
+void Cell::s_absorb_signal(std::list<std::string> ls)
+{
+    std::list<std::string>::iterator i = ls.begin();
+    int signal_id = std::atoi((*i).c_str()); i++;
+    double conc = std::atof((*i).c_str()); i++;
+    std::string absorb_type = *i;
+    double x = this->get_x();
+    double y = this->get_y();
+    double x_length = 0;
+    double y_length = 0;
+
+    double coords[4];
+    coords[0] = x;
+    coords[1] = y;
+    coords[2] = x_length;
+    coords[3] = y_length;
+
+    if (world->grid_type == "continuous") {
+       world->handler->absorb_signal(signal_id, conc, coords, absorb_type.c_str());
+    } else if (world->grid_type == "digital") {
+        world->dhandler->absorb_signal(signal_id, conc, coords, absorb_type.c_str());
+    }
+}
+
+void Cell::s_absorb_QS(std::list<std::string> ls)
+{
+    std::list<std::string>::iterator li = ls.begin();
+    int signal_id = std::atoi((*li).c_str()); li++;
+    std::string compsign ((*li).c_str()); li++;
+    double threshold = std::atof((*li).c_str()); li++;
+    std::string protein ((*li).c_str());
+    std::string lt("<");
+
+    double x = this->get_x();
+    double y = this->get_y();
+    double x_length = 0;
+    double y_length = 0;
+
+    double coords[4];
+    coords[0] = x;
+    coords[1] = y;
+    coords[2] = x_length;
+    coords[3] = y_length;
+
+    double sig_val;
+    sig_val =  world->handler->getSignalValue(signal_id,coords,"exact");
+
+    //Probar eliminando gen del modulo genetico y activacion directa (recordar genD) y eliminar on/off (para que sea la proteina "genD" la que regule downstream)
+
+    if(!(this->getPlasmidList()->isGenExist(protein).empty()))
+    {
+        if((compsign.compare(lt) == 0 && sig_val < threshold) || (compsign.compare(lt) != 0 && sig_val >= threshold))
+        {
+            this->getPlasmidList()->activateGen(protein);
+        }
+        else
+        {
+            this->getPlasmidList()->deactivateGen(protein);
+        }
+    }
+
+    world->handler->absorb_signal(signal_id, threshold, coords, "exact");
+}
+
+void Cell::s_get_QS(std::list<std::string> ls)
+{
+    std::list<std::string>::iterator li = ls.begin();
+    int signal_id = std::atoi((*li).c_str()); li++;
+    std::string compsign ((*li).c_str()); li++;
+    double threshold = std::atof((*li).c_str()); li++;
+    std::string protein ((*li).c_str());
+    std::string lt("<");
+
+    double x = this->get_x();
+    double y = this->get_y();
+    double x_length = 0;
+    double y_length = 0;
+
+    double coords[4];
+    coords[0] = x;
+    coords[1] = y;
+    coords[2] = x_length;
+    coords[3] = y_length;
+
+    double sig_val;
+    sig_val =  world->handler->getSignalValue(signal_id,coords,"exact");
+
+    if(!(this->getPlasmidList()->isGenExist(protein).empty()))
+    {
+        if((compsign.compare(lt) == 0 && sig_val < threshold) || (compsign.compare(lt) != 0 && sig_val >= threshold))
+        {
+            this->getPlasmidList()->activateGen(protein);
+        }
+        else
+        {
+            this->getPlasmidList()->deactivateGen(protein);
+        }
+    }
+}
+
+//OJO con como implementar crecimiento junto con get.
+
+/*void Cell::s_set_signal_multiple(std::list<std::string> ls)
+{
+    std::list<std::string>::iterator i = ls.begin();
+    int signal_id = std::atoi((*i).c_str()); i++;
+    double conc = std::atof((*i).c_str()); i++;
+
+    double x = 0;
+    double y = 0;
+    double x_length = 0;
+    double y_length = 0;
+    double coords[4];
+
+    for(todas las ubicaciones - sobre el iterador de ls)
+    {
+        x = std::atof((*i).c_str()); i++;
+        y = std::atof((*i).c_str()); i++;
+        x_length = std::atof((*i).c_str()); i++;
+        y_length = std::atof((*i).c_str()); i++;
+
+        coords[0] = x;
+        coords[1] = y;
+        coords[2] = x_length;
+        coords[3] = y_length;
+
+        world->handler->setSignalValue(signal_id, conc, coords);
+    }
+}*/
+
+void Cell::s_set_signal_rect(std::list<std::string> ls)
+{
+    std::list<std::string>::iterator i = ls.begin();
+    int signal_id = std::atoi((*i).c_str()); i++;
+    double conc = std::atof((*i).c_str()); i++;
+    double x = std::atof((*i).c_str()); i++;
+    double y = std::atof((*i).c_str()); i++;
+    double x_length = std::atof((*i).c_str()); i++;
+    double y_length = std::atof((*i).c_str());
+
+    double coords[4];
+    coords[0] = x;
+    coords[1] = y;
+    coords[2] = x_length;
+    coords[3] = y_length;
+
+    if (world->grid_type == "continuous") {
+        world->handler->setSignalValue(signal_id, conc, coords, "area");
+    } else if (world->grid_type == "digital") {
+        world->dhandler->setSignalValue(signal_id, conc, coords, "area");
+    }
+
+}
+
+void Cell::s_set_signal(std::list<std::string> ls)
+{
+    std::list<std::string>::iterator i = ls.begin();
+    int signal_id = std::atoi((*i).c_str()); i++;
+    double conc = std::atof((*i).c_str()); i++;
+    double x = std::atof((*i).c_str()); i++;
+    double y = std::atof((*i).c_str());
+    double x_length = 0;
+    double y_length = 0;
+
+    double coords[4];
+    coords[0] = x;
+    coords[1] = y;
+    coords[2] = x_length;
+    coords[3] = y_length;
+
+    if (world->grid_type == "continuous") {
+        world->handler->setSignalValue(signal_id, conc, coords, "exact");
+    } else if (world->grid_type == "digital") {
+        world->dhandler->setSignalValue(signal_id, conc, coords, "exact");
+    }
+
+}
+
+void Cell::s_emit_cross_feeding_signal_from_list(std::list<std::string> ls)
+{
+    std::list<std::string>::iterator i = ls.begin();
+    int signal_id = std::atoi((*i).c_str()); i++;
+    float signal_conc = std::atof((*i).c_str()); i++;
+    std::string emission_type = *i;
+
+    float dl_max = 0, dl = 0;
+    double x = this->get_x();
+    double y = this->get_y();
+    double x_length = this->get_vec_x();
+    double y_length = this->get_vec_y();
+
+    double coords[4];
+    coords[0] = x;
+    coords[1] = y;
+    coords[2] = x_length;
+    coords[3] = y_length;
+
+    dl_max = get_param ( "ecoli_growth_rate_max" ) * this->get_volume() * this->world->get_sim_dt();
+    dl = this->get_d_vol();
+
+    this->cross_output_coefficient = dl/dl_max;
+
+    if(this->cross_output_coefficient > 1.0)
+    {
+        this->cross_output_coefficient = 1.0;
+    }
+
+    if (world->grid_type == "continuous") {
+        world->handler->emit_signal(signal_id,(this->cross_output_coefficient*signal_conc),coords, emission_type.c_str());
+    } else if (world->grid_type == "digital") {
+        world->dhandler->emit_signal(signal_id,(this->cross_output_coefficient*signal_conc),coords, emission_type.c_str());
+    }
+}
+
+void Cell::s_get_cross_feeding_signal_from_list(std::list<std::string> ls)
+{
+    std::list<std::string>::iterator i = ls.begin();
+    int signal_id = std::atoi((*i).c_str()); i++;
+    float signal_conc = std::atof((*i).c_str()); i++;
+    int benefit = std::atoi((*i).c_str());
+    double x = this->get_x();
+    double y = this->get_y();
+    double x_length = 0;
+    double y_length = 0;
+
+    double coords[4];
+    coords[0] = x;
+    coords[1] = y;
+    coords[2] = x_length;
+    coords[3] = y_length;
+    float signal_level = world->handler->getSignalValue(signal_id, coords, "exact");
+    float growth_rate = get_param( "ecoli_growth_rate_max" );
+
+    if(signal_level != -1)
+    {
+        world->signal_concs[signal_id] = signal_level;
+    }
+    else
+    {
+        signal_level = 0;
+    }
+
+    switch(benefit)
+    {
+        case 1:
+            this->cross_input_coefficient = (signal_level/(signal_conc));
+            break;
+        case -1:
+            this->cross_input_coefficient = (1 - (signal_level/(signal_conc)));
+            break;
+        default:
+            this->cross_input_coefficient = 1;
+            break;
+    }
+    if(this->cross_input_coefficient > 1)
+    {
+        this->cross_input_coefficient = 1;
+    }
+    else if(this->cross_input_coefficient < 0)
+    {
+        this->cross_input_coefficient = 0;
+    }
+}
+
+void Cell::s_absorb_cross_feeding_signal_from_list(std::list<std::string> ls)
+{
+    std::list<std::string>::iterator i = ls.begin();
+    int signal_id = std::atoi((*i).c_str()); i++;
+    float signal_conc = std::atof((*i).c_str()); i++;
+    int benefit = std::atoi((*i).c_str()); i++;
+    std::string absorb_type = *i;
+    double x = this->get_x();
+    double y = this->get_y();
+    double x_length = this->get_vec_x();
+    double y_length = this->get_vec_y();
+
+    double coords[4];
+    coords[0] = x;
+    coords[1] = y;
+    coords[2] = x_length;
+    coords[3] = y_length;
+    float pre_signal_level;
+
+    if (world->grid_type == "continuous") {
+        pre_signal_level = world->handler->getSignalValue(signal_id, coords, "exact");
+    } else if (world->grid_type == "digital") {
+        pre_signal_level = world->dhandler->getSignalValue(signal_id, coords, "exact");
+    }
+
+    float growth_rate = get_param( "ecoli_growth_rate" );
+    float post_signal_level;
+    float dif_level = 0;
+
+
+    if(pre_signal_level != -1)
+    {
+        if (world->grid_type == "continuous") {
+            world->handler->absorb_signal(signal_id, signal_conc, coords, "exact");
+            post_signal_level = world->handler->getSignalValue(signal_id, coords, "exact");
+        } else if (world->grid_type == "digital") {
+            world->dhandler->absorb_signal(signal_id, signal_conc, coords, absorb_type.c_str());
+            post_signal_level = world->dhandler->getSignalValue(signal_id, coords, "exact");
+        }
+        dif_level = pre_signal_level - post_signal_level;
+    }
+    else
+    {
+        dif_level = 0;
+    }
+
+    switch(benefit)
+    {
+        case 1:
+            this->cross_input_coefficient = (dif_level/(signal_conc));
+            break;
+        case -1:
+            this->cross_input_coefficient = (1 - (dif_level/(signal_conc)));
+            break;
+        default:
+            this->cross_input_coefficient = 1;
+            break;
+    }
+
+    if(this->cross_input_coefficient > 1)
+    {
+        this->cross_input_coefficient = 1;
+    }
+    else if(this->cross_input_coefficient < 0)
+    {
+        this->cross_input_coefficient = 0;
+    }
+}
+
+int Cell::check_gen_condition(std::vector<std::pair<std::string, int>> cond)
+{
+    int result = 1;
+    bool t = false;
+
+    std::map<std::string,int> activeProteins, inactiveProteins;
+    activeProteins = this->plasmidList->getGensActive();
+    inactiveProteins = this->plasmidList->getGensDeactive();
+
+
+    for(auto it : cond)
+    {
+        t = this->getPlasmidList()->isGenExist(it.first).empty();
+
+        if(activeProteins.find(it.first) != activeProteins.end() && it.second == -1)
+        {
+            result = 0;
+        }
+        else if(inactiveProteins.find(it.first) != inactiveProteins.end() && it.second == 1)
+        {
+            result = 0;
+        }
+        else if(activeProteins.find(it.first) == activeProteins.end() && it.second == 1)
+        {
+            result = 0;
+        }
+        else if(t && it.second == 1)
+        {
+            result = 0;
+        }
+    }
+
+    return result;
+}
+
+int Cell::check_plasmid_condition(std::vector<std::pair<std::string, int>> cond)
+{
+    int result = 1;
+
+    std::vector<GenPlasmid*>* plasmids;
+
+    for(auto it : cond)
+    {
+        plasmids = this->getPlasmidList()->getPlasmidByName(it.first);
+        if(!plasmids->empty() && it.second == -1)
+        {
+            result = 0;
+        }
+        if(plasmids->empty() && it.second == 1)
+        {
+            result = 0;
+        }
+    }
+    return result;
+}
+
+void Cell::state_to_file(FILE *fp)
+{
+    int i = 0;
+    fprintf ( fp, "%f, %d, %f, %f, %f, %f, %f, %d, %d, %d, %d",
+              this->world->get_time(),
+              this->get_id(), this->get_x(), this->get_y(), this->get_theta(), this->get_volume(), this->get_gt_inst(),
+              this->get_rep(GFP), this->get_rep(RFP), this->get_rep(YFP), this->get_rep(CFP));
+
+    std::map<std::string,int> activeProteins, inactiveProteins;
+    std::vector<std::pair<std::string, int>> allProteins;
+    int value = 0;
+    activeProteins = this->plasmidList->getGensActive();
+    inactiveProteins = this->plasmidList->getGensDeactive();
+
+    for(auto it : activeProteins)
+    {
+        allProteins.push_back(std::make_pair(it.first,1));
+    }
+
+    for(auto it : inactiveProteins)
+    {
+        allProteins.push_back(std::make_pair(it.first,0));
+    }
+
+    std::sort(allProteins.begin(), allProteins.end());
+
+    for(auto it : allProteins)
+    {
+        value = it.second;
+        fprintf(fp, ", %d", value);
+    }
+
+    fprintf(fp, "\n");
 
 }

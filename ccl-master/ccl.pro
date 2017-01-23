@@ -10,7 +10,7 @@ win32 {
 
 macx {
   QMAKE_CXXFLAGS += -fast -w
-  QMAKE_MAC_SDK = macosx10.11
+  QMAKE_MAC_SDK = macosx10.12
 }
 
 #QT       -= core x86_64

@@ -312,6 +312,24 @@ void SymbolTable::print_as_record_to_string ( std::string * str )  {
 
 }
 
+std::list<std::string> SymbolTable::field_names_as_string_list (void)
+{
+
+  int i;
+  Symbol * temp;
+
+  std::list<std::string> fields;
+
+  for ( i=0; i<num_buckets; i++ ) {
+    for ( temp=buckets[i]; temp!=NULL; temp=temp->next ) {
+      fields.push_back(std::string(temp->get_name()));
+    }
+  }
+
+  return(fields);
+
+}
+
 void SymbolTable::record_tostring_aux ( std::stringstream * strm )  {
 
   int i, j=0;

@@ -21,12 +21,14 @@
 #define _ECOLI_H_
 
 #include "Micro.h"
+extern float consumido;
+extern float available;
 
 class EColi : public Cell {
 
  public:
-  EColi ( World * w, float x, float y, float a, float v );
-  EColi ( World * w, float v, ceBody* body );
+  EColi ( World * w, float x, float y, float a );
+  EColi ( World * w, ceBody* body );
 
 #ifndef NOGUI
   void render ( Theme * theme, GroPainter * painter );
@@ -42,13 +44,19 @@ class EColi : public Cell {
   float get_length ( void ) { return volume / ( 0.25 * PI * DEFAULT_ECOLI_DIAMETER * DEFAULT_ECOLI_DIAMETER ); }
 
   float get_volume ( void ) { 
-    return volume;
+    //return volume;
+      return length;
   }
 
   void force_divide ( void ) { force_div = true; }
+  bool get_force_divide ( void ) { return force_div; }
+  void set_force_divide ( bool v ) { force_div = v; }
+
+  int get_div_count ( void ) { return div_count; }
+  void set_div_count ( int n ) { div_count = n; }
   
  private:
-  float volume, lambda, div_vol;
+  float volume, lambda, div_vol, div_length, init_length, length, d_length;
   int div_count;
   bool force_div;
 

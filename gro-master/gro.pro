@@ -32,7 +32,7 @@ macx {
   #LIBS += -stdlib=libstdc++
   #QMAKE_LFLAGS -= -stdlib=libc++
   #QMAKE_LFLAGS += -stdlib=libstdc++
-  QMAKE_MAC_SDK = macosx10.11
+  QMAKE_MAC_SDK = macosx10.12
 
 }
 
@@ -90,15 +90,15 @@ contains ( CONFIG, nogui ) {
 
 macx {
   CONFIG(debug, debug|release) {
-        LIBS += -L../ccl_Debug/ -lccl -L ../CellEngine/build/mac/debug -lcellengine -L../cellsignals/build/mac/debug -lsignals -L../CellNutrient/build/mac/debug -lcellnutrient -L../CellProt/build/mac/debug -lcellprot
+        LIBS += -L../ccl_Debug/ -lccl -L ../CellEngine/build/mac/debug -lcellengine -L../cellsignals/build/mac/debug -lsignals -L../CellNutrient/build/mac/debug -lcellnutrient -L../CellPro/build/mac/debug -lcellpro
         PRE_TARGETDEPS += ../ccl_Debug/libccl.a
   } else {
-        LIBS += -L../ccl_Release/ -lccl -L ../CellEngine/build/mac/release -lcellengine -L../cellsignals/build/mac/release -lsignals -L../CellNutrient/build/mac/release -lcellnutrient -L../CellProt/build/mac/release -lcellprot
+        LIBS += -L../ccl_Release/ -lccl -L ../CellEngine/build/mac/release -lcellengine -L../cellsignals/build/mac/release -lsignals -L../CellNutrient/build/mac/release -lcellnutrient -L../CellPro/build/mac/release -lcellpro
         PRE_TARGETDEPS += ../ccl_Release/libccl.a
   }
 
   #DEPENDPATH += ../Chipmunk-5.3.5/
-  INCLUDEPATH += ../ccl-master/ ../CellEngine/include ../cellsignals/include ../CellNutrient/include ../CellProt/include
+  INCLUDEPATH += ../ccl-master/ ../CellEngine/include ../cellsignals/include ../CellNutrient/include ../CellPro/include
 
   #makelinks.commands += echo Making links in $$OUT_PWD;
   #makelinks.commands += ln -s -f ../GRO/examples;
@@ -107,10 +107,10 @@ macx {
 
 linux {
   CONFIG(debug, debug|release) {
-        LIBS += -L../ccl_Debug/ -lccl -L../CellEngine/build/linux/debug -lcellengine -L../CellNutrient/build/linux/debug -lcellnutrient -L../CellProt/build/linux/debug -lcellprot -L../cellsignals/build/linux/debug -lsignals -lrt
+        LIBS += -L../ccl_Debug/ -lccl -L../CellEngine/build/linux/debug -lcellengine -L../CellNutrient/build/linux/debug -lcellnutrient -L../CellPro/build/linux/debug -lcellpro -L../cellsignals/build/linux/debug -lsignals -lrt
         PRE_TARGETDEPS += ../ccl_Debug/libccl.a
   } else {
-        LIBS += -L../ccl_Release/ -lccl -L../CellEngine/build/linux/release -lcellengine -L../CellNutrient/build/linux/release -lcellnutrient -L../CellProt/build/linux/release -lcellprot -L../cellsignals/build/linux/release -lsignals -lrt
+        LIBS += -L../ccl_Release/ -lccl -L../CellEngine/build/linux/release -lcellengine -L../CellNutrient/build/linux/release -lcellnutrient -L../CellPro/build/linux/release -lcellpro -L../cellsignals/build/linux/release -lsignals -lrt
         PRE_TARGETDEPS += ../ccl_Release/libccl.a
   }
   #LIBS += -L/home/tin/copyfiles/PhD/EvLIT/PLASWIRES/GRO/BiGRO2/CellEngine/build/ -lcellengine -L/home/tin/copyfiles/PhD/EvLIT/PLASWIRES/GRO/BiGRO2/cellsignal/cellsignal-0.0.3/build/ -lcellsignal
@@ -118,23 +118,23 @@ linux {
 
   #../CellEngine/build/libcellengine.a ../cellsignal/cellsignal-0.0.3/build/libcellsignal.a
   #DEPENDPATH += ../Chipmunk-5.3.5/
-  INCLUDEPATH += ../ccl-master/ ../CellEngine/include/ ../CellNutrient/include/ ../cellsignals/include/ ../CellProt/include
+  INCLUDEPATH += ../ccl-master/ ../CellEngine/include/ ../CellNutrient/include/ ../cellsignals/include/ ../CellPro/include
 
-  makelinks.commands += echo Making links in $$OUT_PWD;
-  makelinks.commands += ln -s -f ../GRO/examples;
-  makelinks.commands += ln -s -f ../GRO/include;
+  #makelinks.commands += echo Making links in $$OUT_PWD;
+  #makelinks.commands += ln -s -f ../GRO/examples;
+  #makelinks.commands += ln -s -f ../GRO/include;
 }
 
 win32 {
   CONFIG(debug, debug|release) {
-        LIBS += -L../ccl_Debug/debug -lccl -L../CellEngine/build/win/debug -lcellengine -L../CellNutrient/build/win/debug -lcellnutrient -L../cellsignals/build/win/debug -lsignals -L../CellProt/build/win/debug -lcellprot
+        LIBS += -L../ccl_Debug/debug -lccl -L../CellEngine/build/win/debug -lcellengine -L../CellNutrient/build/win/debug -lcellnutrient -L../cellsignals/build/win/debug -lsignals -L../CellPro/build/win/debug -lcellpro
         PRE_TARGETDEPS += ../ccl_Debug/debug/libccl.a
   } else {
-        LIBS += -L../ccl_Release/release -lccl -L../CellEngine/build/win/release -lcellengine -L../CellNutrient/build/win/release -lcellnutrient -L../cellsignals/build/win/release -lsignals -L../CellProt/build/win/release -lcellprot
+        LIBS += -L../ccl_Release/release -lccl -L../CellEngine/build/win/release -lcellengine -L../CellNutrient/build/win/release -lcellnutrient -L../cellsignals/build/win/release -lsignals -L../CellPro/build/win/release -lcellpro
         PRE_TARGETDEPS += ../ccl_Release/release/libccl.a
   }
 
-  INCLUDEPATH += ../ccl-master/ ../CellEngine/include/ ../CellNutrient/include/ ../cellsignals/include/ ../CellProt/include
+  INCLUDEPATH += ../ccl-master/ ../CellEngine/include/ ../CellNutrient/include/ ../cellsignals/include/ ../CellPro/include
   QMAKE_POST_LINK = copy ..\GRO\include\*.* ..\..\;
 }
 

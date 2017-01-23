@@ -30,7 +30,7 @@ program p() := {
 program q() := {
 
   set ( "ecoli_growth_rate", 0.1 );
-  set ( "ecoli_division_size_mean", 2.0 );
+  set ( "ecoli_division_length_mean", 2.0 );
   set ( "ecoli_division_size_variance", 0.2 );
 
 };
@@ -43,7 +43,7 @@ program r() := {
 
 program s() := {
 
-  set ( "ecoli_division_size_mean", 1000 ); // essentially turns off gro's division machinery 
+  set ( "ecoli_division_length_mean", 1000 ); // essentially turns off gro's division machinery
 
   rate(1) & volume > 3.14 : { 
     divide()

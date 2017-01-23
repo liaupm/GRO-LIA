@@ -6,21 +6,31 @@ endif
 
 ifeq ($(OS),Windows_NT)
         OS_DIR=win
+	COMP = g++
 else
         UNAME_S := $(shell uname -s)
         ifeq ($(UNAME_S),Linux)
                 OS_DIR=linux
+		COMP = g++
         endif
         ifeq ($(UNAME_S),Darwin)
                 OS_DIR=mac
+		COMP = clang++
         endif
 endif
 
 ifeq ($(MODE),release)
-        CC = clang++ -std=c++11 -Wall -Wextra -O3 -c -I$(INCLUDE)
+	ifeq ($(COMP), g++)
+		CC = g++ -Wall -Wextra -O3 -c -I$(INCLUDE) -std=c++11
+	else
+        	CC = clang++ -std=c++11 -Wall -Wextra -O3 -c -I$(INCLUDE)
+	endif
 else
-        #CC = g++ -Wall -Wextra -g -c -I$(INCLUDE) #debug
-	CC = clang++ -std=c++11 -Wall -Wextra -g -c -I$(INCLUDE)
+        ifeq ($(COMP), g++)
+		CC = g++ -Wall -Wextra -g -c -I$(INCLUDE) #debug
+	else
+		CC = clang++ -std=c++11 -Wall -Wextra -g -c -I$(INCLUDE)
+	endif
 endif
 
 ifeq ($(OS_DIR),mac)

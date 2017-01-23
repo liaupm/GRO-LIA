@@ -22,6 +22,11 @@
 #endif
 
 #include "Micro.h"
+#include "Rands.h"
+#include "CellNutrient.h"
+#include <sys/time.h>
+
+using namespace std;
 
 #ifdef NOGUI
 World::World ( void ) {
@@ -36,15 +41,26 @@ World::World ( GroThread *ct ) : calling_thread ( ct ) {
     print_rate = -1;
     movie_rate = -1;
     program_initialized = false;
+    program_restarted = false;
     gro_message = "";
     stop_flag = false;
     zoom = 1.0;
     barriers = new std::list<Barrier>;
 
+    num_actions = 0;
+    stt_time = 0;
+
+    signal_concs.clear();
+    s_signal_id = 0;
+
     set_sim_dt ( DEFAULT_SIM_DT );
     set_chip_dt ( DEFAULT_CHIP_DT );
 
 }
+
+float consumido = 0;
+float available = 0;
+unsigned int cellLength = (MAX_LENGTH + MIN_LENGTH) * 0.5;
 
 World::~World ( void ) {
 
@@ -62,8 +78,9 @@ World::~World ( void ) {
     /*cpSpaceFreeChildren(space);
     cpSpaceFree(space);*/
     ceDestroySpace(space);
-
+    csDestroyGrid(signalGrid);
     delete population;
+    delete handler;
 
     prog->destroy(this);
 
@@ -86,6 +103,10 @@ void World::init () {
 
     // Cells
     population = new std::list<Cell *>; // deleted in ~World
+    std::list<Cell *>::iterator j;
+
+    float *difdeg;
+    difdeg = (float*)malloc(4*sizeof(float));
 
     // Chipmunk stuff
     /*cpResetShapeIdCounter();
@@ -95,11 +116,55 @@ void World::init () {
     space->damping = DAMPING;*/
     space = ceCreateSpace();
 
+    signalGrid = csCreateGrid(get_param("nutrient_amount"), get_param("nutrient_consumption_rate"), get_param("nutrient_variability"), (unsigned int)(get_param("nutrient_grid_length")),
+                              (float)(get_param("nutrient_grid_cell_size")), (int)(get_param("nutrient_consumption_mode")), difdeg);
+
+    if(!program_restarted)
+    {
+        //Nutrients
+        set_param ("nutrients", 0.0);
+        set_param ("nutrient_amount", 200.0);
+        set_param ("nutrient_consumption_rate", 0.033);
+        set_param ("nutrient_variability", 0.2);
+        set_param ("nutrient_grid_length", 10);
+        set_param ("nutrient_grid_cell_size", cellLength);
+        set_param ("nutrient_consumption_mode", 0);
+        set_param ("nutrient_diffusion", 0.0);
+        set_param ("nutrient_kdiff", 0.0);
+        set_param ("nutrient_degradation", 0.0);
+        set_param ("nutrient_kdeg", 0.0);
+
+        //Signals
+        set_param ("signals", 1.0);
+        set_param ("signals_grid_length", 10);
+        set_param ("signals_grid_cell_size", 5);
+        set_param ("signals_grid_neighborhood", 8);
+        set_param ("signals_draw", 1.0);
+
+        set_param ( "chemostat_width", 200);
+        set_param ( "chemostat_height", 200);
+        set_param ( "signal_area_width", 1000);
+        //set_param ( "signal_num_divisions", 50);
+        set_param ( "signal_num_divisions", 5);
+
+
+        /*set_param ( "signal_area_width", 150);
+        set_param ( "signal_num_divisions", 5);*/
+        set_param ( "population_max", 1000 );
+
+        set_param ( "signal_grid_width", 1000 );
+        set_param ( "signal_grid_height", 1000 );
+        set_param ( "signal_element_size", 5 );
+        /*set_param ( "signal_grid_width", 150 );
+        set_param ( "signal_grid_height", 150 );
+        set_param ( "signal_element_size", 30 );*/
+    }
+
     // Default parameters. These will be over-written when/if the program
     // defines them via "set". But just in case the user does not do this,
     // they are defined here.
 
-    set_param ( "chemostat_width", 200);
+    /*set_param ( "chemostat_width", 200);
     set_param ( "chemostat_height", 200);
     set_param ( "signal_area_width", 800);
     set_param ( "signal_num_divisions", 160);
@@ -107,7 +172,17 @@ void World::init () {
 
     set_param ( "signal_grid_width", 800 );
     set_param ( "signal_grid_height", 800 );
-    set_param ( "signal_element_size", 5 );
+    set_param ( "signal_element_size", 5 );*/
+
+    // Global plasmid list initialization
+    plasmidList = new GenListPlasmid("listP");
+    globalPlasmid = new GenPlasmid("global_plasmid");
+    globalPromoter = new GenPromoter("global_promoter",-1);
+    globalOperon = new GenOperon("global_operon",globalPromoter);
+    globalPlasmid->insertOperon(globalOperon);
+    plasmidList->insertPlasmid(globalPlasmid);
+
+    this->num_actions = 0;
 
     // Program
     ASSERT ( prog != NULL );
@@ -120,6 +195,55 @@ void World::init () {
 
         program_initialized = true;
 
+    }
+
+    csDestroyGrid(signalGrid);
+
+    if(get_param("nutrients") == 1.0)
+    {
+        difdeg[0] = get_param("nutrient_diffusion");
+        difdeg[1] = get_param("nutrient_kdiff");
+        difdeg[2] = get_param("nutrient_degradation");
+        difdeg[3] = get_param("nutrient_kdeg");
+
+        float horizontal_initial_length_delta = this->dump_right() - this->dump_left();
+        float vertical_initial_length_delta = this->dump_bottom() - this->dump_top();
+        float largest_delta = 0;
+        unsigned int grid_length = 0;
+        if(horizontal_initial_length_delta == 0)
+        {
+            horizontal_initial_length_delta = this->dump_right();
+        }
+        if(horizontal_initial_length_delta < 0)
+        {
+            horizontal_initial_length_delta = -horizontal_initial_length_delta;
+        }
+        if(vertical_initial_length_delta == 0)
+        {
+            vertical_initial_length_delta = this->dump_bottom();
+        }
+        if(vertical_initial_length_delta < 0)
+        {
+            vertical_initial_length_delta = -vertical_initial_length_delta;
+        }
+        if(horizontal_initial_length_delta > vertical_initial_length_delta)
+        {
+            largest_delta = horizontal_initial_length_delta;
+        }
+        else
+        {
+            largest_delta = vertical_initial_length_delta;
+        }
+
+        grid_length = 2*(unsigned int)ceil((double)(largest_delta/get_param("nutrient_grid_cell_size")));
+
+        if(grid_length <= 10)
+        {
+            grid_length = 10;
+        }
+
+        signalGrid = csCreateGrid(get_param("nutrient_amount"), get_param("nutrient_consumption_rate"), get_param("nutrient_variability"), grid_length,
+                                 (float)(get_param("nutrient_grid_cell_size")), (int)(get_param("nutrient_consumption_mode")), difdeg);
     }
 
     // Chemostat
@@ -148,6 +272,14 @@ void World::init () {
 
     }
 
+    free(difdeg);
+
+    if(program_restarted) //This is for restart
+    {
+        //program_initialized = false;
+        program_restarted = false;
+    }
+
 }
 
 void World::emit_message ( std::string str, bool clear ) {
@@ -158,6 +290,13 @@ void World::emit_message ( std::string str, bool clear ) {
     std::cerr << str << "\n";
 #endif
 
+}
+
+void World::remove_all_actions()
+{
+    action_prot_list.clear();
+    action_param_list.clear();
+    action_names.clear();
 }
 
 void World::restart ( void ) {
@@ -172,6 +311,10 @@ void World::restart ( void ) {
     cpSpaceFree(space);*/
 
     ceDestroySpace(space);
+    if(get_param("nutrients") == 1.0)
+    {
+        csDestroyGrid(signalGrid);
+    }
 
     delete population;
 
@@ -180,9 +323,213 @@ void World::restart ( void ) {
         signal_list[k]->zero();
     }
 
+    program_restarted = true;
+
     init();
 
     gro_message = "";
+
+}
+
+///////////////////////////////////////////////////REARMAR CUANDO ESTE LISTO TODO///////////////////////////////////////////
+void World::replating ( float percentage )
+{
+    /*std::list<Cell *>::iterator j;
+    std::list<Cell *>* population2;
+    float pop_size = (float)population->size();
+    int gap = 1, counter = 0;
+    float *digdef;
+    digdef = (float*)malloc(4*sizeof(float));
+
+    if(percentage > 1)
+    {
+        percentage = 1;
+    }
+    else if(percentage < 0)
+    {
+        percentage = 1;
+    }
+
+    gap = (int)(pop_size/(pop_size*percentage));
+    population2 = new std::list<Cell *>;
+
+    for ( j=population->begin(); j!=population->end(); j++ )
+    {
+        if (counter == (gap-1))
+        {
+            population2->push_back((*j));
+            counter = 0;
+        }
+        else
+        {
+            counter++;
+        }
+    }
+
+    ceDestroySpace(space);
+
+    if(get_param("nutrients") == 1.0)
+    {
+        csDestroyGrid(signalGrid);
+    }
+    delete population;
+
+    unsigned int k;
+    for ( k=0; k<signal_list.size(); k++ ) {
+        signal_list[k]->zero();
+    }
+
+    // Time
+    max_val = 0.0f;
+
+    // Cells
+    population = new std::list<Cell *>; // deleted in ~World
+
+    space = ceCreateSpace();
+
+    //Ve si hay que mover esto despues del traslado de bacterias por population2.
+    if(get_param("nutrients") == 1.0)
+    {
+        digdef[0] = get_param("nutrient_diffusion");
+        digdef[1] = get_param("nutrient_kdiff");
+        digdef[2] = get_param("nutrient_degradation");
+        digdef[3] = get_param("nutrient_kdeg");
+
+        float horizontal_initial_length_delta = this->dump_right() - this->dump_left();
+        float vertical_initial_length_delta = this->dump_bottom() - this->dump_top();
+        float largest_delta = 0;
+        unsigned int grid_length = 0;
+        if(horizontal_initial_length_delta == 0)
+        {
+            horizontal_initial_length_delta = this->dump_right();
+        }
+        if(horizontal_initial_length_delta < 0)
+        {
+            horizontal_initial_length_delta = -horizontal_initial_length_delta;
+        }
+        if(vertical_initial_length_delta == 0)
+        {
+            vertical_initial_length_delta = this->dump_bottom();
+        }
+        if(vertical_initial_length_delta < 0)
+        {
+            vertical_initial_length_delta = -vertical_initial_length_delta;
+        }
+        if(horizontal_initial_length_delta > vertical_initial_length_delta)
+        {
+            largest_delta = horizontal_initial_length_delta;
+        }
+        else
+        {
+            largest_delta = vertical_initial_length_delta;
+        }
+
+        grid_length = 2*(unsigned int)ceil((double)(largest_delta/get_param("nutrient_grid_cell_size")));
+
+        if(grid_length <= 10)
+        {
+            grid_length = 10;
+        }
+
+        signalGrid = csCreateGrid(get_param("nutrient_amount"), get_param("nutrient_consumption_rate"), get_param("nutrient_variability"), grid_length,
+                                 (float)(get_param("nutrient_grid_cell_size")), (int)(get_param("nutrient_consumption_mode")), digdef);
+
+    }
+
+    if(get_param("signals") == 0.0 && handler != nullptr)
+    {
+        delete handler;
+    }
+    else if(get_param("signals") == 1.0)
+    {
+        //CREAR AQUI
+        std::vector<GSignal*> old_signal_vector = handler->getSignalsVector();
+        if(handler->)
+        delete handler;
+        handler = new Core((unsigned int)get_param ("signals_grid_length"), (unsigned int)get_param ("signals_grid_cell_size"));
+        handler->setSignalsVector(old_signal_vector);
+    }
+
+    for(j=population2->begin(); j!=population2->end(); j++)
+    {
+
+        Program * prog = (*j)->get_gro_program()->copy();
+        float x = 0, y = 0, theta = 0, vol;
+        float max_radius = (float)(population2->size());
+
+        x = (float) fRand(-max_radius, max_radius);
+        y = (float) fRand(-max_radius, max_radius);
+
+        while(((x*x) + (y*y)) > (max_radius*max_radius))
+        {
+            x = (float) fRand(-max_radius, max_radius);
+            y = (float) fRand(-max_radius, max_radius);
+        }
+
+        theta = (float) fRand(0.0, 6.28);
+        vol = (float)((*j)->get_volume());
+
+        EColi * c = new EColi ( this, x, y, theta, vol );
+
+        c->set_div_count((*j)->get_div_count());
+        c->set_force_divide((*j)->get_force_divide());
+
+        int i;
+
+        for( i=0; i<(*j)->nPlasmids(); i++)
+        {
+            c->setPlasmid(i,(*j)->hasPlasmid(i));
+            c->set_receivedPlasmid(i,(*j)->receivedPlasmid(i));
+            c->set_conjugated_indicator(i,(*j)->get_conjugated_indicator(i));
+            c->set_was_just_conjugated(i,(*j)->was_just_conjugated(i));
+            c->setEEX(i,(*j)->hasEEX(i));
+        }
+
+        for( i=0; i<(*j)->get_num_proteins(); i++)
+        {
+            c->set_internal_protein(i,(*j)->get_internal_protein(i));
+            c->set_internal_RNA(i,(*j)->get_internal_RNA(i));
+            c->set_degr_prot(i,(*j)->get_degr_prot(i));
+            c->set_degr_rna(i,(*j)->get_degr_rna(i));
+        }
+
+        for ( i=0; i<this->num_operons(); i++ ){
+            for(k=0;k<(*j)->get_num_proteins();k++){
+                c->set_last_state_value(i,k,(*j)->get_last_state(i,k));
+                c->set_rna_operon(i,k,(*j)->get_rna_operon(i,k));
+                c->set_prot_actv_time(i,k,(*j)->get_prot_actv_time(i,k));
+                c->set_prot_degr_time(i,k,(*j)->get_prot_degr_time(i,k));
+                c->set_rna_actv_time(i,k,(*j)->get_rna_actv_time(i,k));
+                c->set_rna_degr_time(i,k,(*j)->get_rna_degr_time(i,k));
+
+                c->set_protein_operon(i,k, c->get_protein_operon(i,k));
+                if((*j)->get_protein_operon(i,k)){
+                    Operon * op = this->get_operon(i);
+                    double up_p = op->get_prot_up_time(k);
+                    double up_p_err = op->get_prot_up_time_err(k);
+                    double up_r = op->get_rna_up_time(k);
+                    double up_r_err = op->get_rna_up_time_err(k);
+                    c->set_prot_actv_time(i,k,(this->get_time() + (drand48() * ((up_p + up_p_err)-(up_p-up_p_err))+(up_p-up_p_err)))); //la mitad del tiempo de activacion normal
+                    c->set_rna_actv_time(i,k,(this->get_time() + (drand48() * ((up_r + up_r_err)-(up_r-up_r_err))+(up_r-up_r_err)))); //la mitad del tiempo de activacion normal
+                }
+            }
+        }
+
+
+        c->set_param_map ( get_param_map() );
+
+        if ( c->get_gro_program() == NULL ) {
+            c->set_gro_program ( prog );
+        }
+
+        for ( i=0; i<MAX_STATE_NUM; i++ ) c->set(i,(*j)->get(i));
+        for ( i=0; i<MAX_REP_NUM; i++ ) c->set_rep(i,(*j)->get_rep(i));
+        c->set_param("ecoli_growth_rate", (*j)->get_param("ecoli_growth_rate"));
+
+        this->add_cell ( c );
+
+    }
+    delete population2;*/
 
 }
 
@@ -269,6 +616,200 @@ void World::render ( GroPainter * painter ) {
         painter->drawLine ( -x-20, -y,  -x+20, -y );
         painter->drawLine ( -x, -y-20,  -x, -y+20 );
 
+    }
+
+    if ( signal_concs.size() > 0 && get_param("signals_draw") == 1.0 ) {
+
+        int i,j;
+        unsigned int k;
+        float r, g, b;
+        QColor col;
+        float sum;
+        float firstX, firstY;
+
+        if (this->grid_type == "continuous" && this->diff_method == "gro_original") {
+            for ( i=0; i<handler->getLen(); i++ ) {
+
+                for ( j=0; j<handler->getLen(); j++ ) {
+
+                    r = 0; g = 0; b = 0;
+
+                    // determine overall signal level
+                    sum = 0.0;
+                    for ( k=0; k<signal_concs.size(); k++ )
+                    {
+                        //printf("Signal %d concentration at (%d,%d): %f\n",k,i,j, handler->grid->getSignalGrid(i,j)->getConcentration(k));
+                        sum += handler->getCell(i,j)->getValue(k);
+                    }
+
+                    if ( sum > 0.01 ) {
+
+                        for ( k=0; k<signal_concs.size(); k++ ) {
+
+                            // accumulate color
+                            theme.accumulate_color ( k, handler->getCell(i,j)->getValue(k), &r, &g, &b );
+                        }
+
+                    }
+
+                    if ( sum > 0.01  ) {
+
+                        col.setRgbF(r/k,g/k,b/k);
+                        firstX = -(((float)(handler->getLen()))/2)*(float)(handler->getCellSize());
+                        firstY = firstX;
+                        painter->fillRect(
+                                    firstX+handler->getCellSize()*j,
+                                    (firstY+handler->getCellSize()*i),
+                                    (int) ( handler->getCellSize() ),
+                                    (int) ( handler->getCellSize() ),
+                                    col);
+
+                    }
+
+                }
+
+            }
+
+
+            theme.apply_message_color(painter);
+
+            int x = (((float)(handler->getLen()*handler->getCellSize()))/2),
+                y = (((float)(handler->getLen()*handler->getCellSize()))/2);
+
+            painter->drawLine ( x-20, y,  x+20, y );
+            painter->drawLine ( x, y-20,  x, y+20 );
+
+            painter->drawLine ( -x-20, y,  -x+20, y );
+            painter->drawLine ( -x, y-20,  -x, y+20 );
+
+            painter->drawLine ( x-20, -y,  x+20, -y );
+            painter->drawLine ( x, -y-20,  x, -y+20 );
+
+            painter->drawLine ( -x-20, -y,  -x+20, -y );
+            painter->drawLine ( -x, -y-20,  -x, -y+20 );
+
+        } else if (this->grid_type == "continuous" && this->diff_method == "matrix") {
+            for ( i=0; i<handler->getLen(); i++ ) {
+
+                for ( j=0; j<handler->getLen(); j++ ) {
+
+                    r = 0; g = 0; b = 0;
+
+                    // determine overall signal level
+                    sum = 0.0;
+                    for ( k=0; k<signal_concs.size(); k++ )
+                    {
+                        //printf("Signal %d concentration at (%d,%d): %f\n",k,i,j, handler->grid->getSignalGrid(i,j)->getConcentration(k));
+                        sum += handler->getCell(i,j)->getValue(k);
+                    }
+
+                    if ( sum > 0.01 ) {
+
+                        for ( k=0; k<signal_concs.size(); k++ ) {
+
+                            // accumulate color
+                            theme.accumulate_color ( k, handler->getCell(i,j)->getValue(k), &r, &g, &b );
+                        }
+
+                    }
+
+                    if ( sum > 0.01  ) {
+
+                        col.setRgbF(r/k,g/k,b/k);
+                        firstX = -(((float)(handler->getLen()))/2)*(float)(handler->getCellSize());
+                        firstY = firstX;
+                        painter->fillRect(
+                                    firstX+handler->getCellSize()*j,
+                                    (firstY+handler->getCellSize()*i),
+                                    (int) ( handler->getCellSize() ),
+                                    (int) ( handler->getCellSize() ),
+                                    col);
+
+                    }
+
+                }
+
+            }
+
+
+            theme.apply_message_color(painter);
+
+            int x = (((float)(handler->getLen()*handler->getCellSize()))/2),
+                y = (((float)(handler->getLen()*handler->getCellSize()))/2);
+
+            painter->drawLine ( x-20, y,  x+20, y );
+            painter->drawLine ( x, y-20,  x, y+20 );
+
+            painter->drawLine ( -x-20, y,  -x+20, y );
+            painter->drawLine ( -x, y-20,  -x, y+20 );
+
+            painter->drawLine ( x-20, -y,  x+20, -y );
+            painter->drawLine ( x, -y-20,  x, -y+20 );
+
+            painter->drawLine ( -x-20, -y,  -x+20, -y );
+            painter->drawLine ( -x, -y-20,  -x, -y+20 );
+
+        } else if (this->grid_type == "digital") {
+            for ( i=0; i<dhandler->getLen(); i++ ) {
+
+                for ( j=0; j<dhandler->getLen(); j++ ) {
+
+                    r = 0; g = 0; b = 0;
+
+                    // determine overall signal level
+                    sum = 0.0;
+                    for ( k=0; k<signal_concs.size(); k++ )
+                    {
+                        //printf("Signal %d concentration at (%d,%d): %f\n",k,i,j, dhandler->getCell(i,j)->getValue(k));
+                        sum += dhandler->getCell(i,j)->getValue(k);
+                    }
+
+                    if ( sum > 0.01 ) {
+
+                        for ( k=0; k<signal_concs.size(); k++ ) {
+
+                            // accumulate color
+                            theme.accumulate_color ( k, dhandler->getCell(i,j)->getValue(k), &r, &g, &b );
+                        }
+
+                    }
+
+                    if ( sum > 0.01  ) {
+
+                        col.setRgbF(r/k,g/k,b/k);
+                        firstX = -(((float)(dhandler->getLen()))/2)*(float)(dhandler->getCellSize());
+                        firstY = firstX;
+                        painter->fillRect(
+                                    firstX+dhandler->getCellSize()*j,
+                                firstY+dhandler->getCellSize()*i,
+                                (int) ( dhandler->getCellSize() ),
+                                (int) ( dhandler->getCellSize() ),
+                                col);
+
+                    }
+
+                }
+
+            }
+
+            theme.apply_message_color(painter);
+
+            int x = (((float)(dhandler->getLen()*dhandler->getCellSize()))/2),
+                    y = (((float)(dhandler->getLen()*dhandler->getCellSize()))/2);
+
+            painter->drawLine ( x-20, y,  x+20, y );
+            painter->drawLine ( x, y-20,  x, y+20 );
+
+            painter->drawLine ( -x-20, y,  -x+20, y );
+            painter->drawLine ( -x, y-20,  -x, y+20 );
+
+            painter->drawLine ( x-20, -y,  x+20, -y );
+            painter->drawLine ( x, -y-20,  x, -y+20 );
+
+            painter->drawLine ( -x-20, -y,  -x+20, -y );
+            painter->drawLine ( -x, -y-20,  -x, -y+20 );
+
+        }
     }
 
     for ( j=population->begin(); j!=population->end(); j++ ) {
@@ -359,19 +900,63 @@ void World::update ( void ) {
 
     ceStep(space);
 
+    std::list<Cell *>::iterator j;
+    unsigned int n_bacteria = population->size();
+    int index = 0, k=0, l=0; //m = 0;
+    double s_conc = 0;
+    float* consumption;
+
+    if(get_param("nutrients") == 1.0)
+    {
+
+        consumption = (float*)malloc(sizeof(float)*n_bacteria);
+        //float consumption[n_bacteria][2];
+
+        float coords[n_bacteria][4];
+        for ( j=population->begin(); j!=population->end(); j++ ) {
+            //if ((((*j)->get_x()) < RADIO*cellLength) || (((*j)->get_y()) < RADIO*cellLength) || (((*j)->get_x()) > -(RADIO*cellLength)) || (((*j)->get_y()) > -(RADIO*cellLength))) {
+              coords[index][0] = (float)((*j)->get_x());
+              coords[index][1] = (float)((*j)->get_y());
+              coords[index][2] = (float)((*j)->get_vec_x());
+              coords[index][3] = (float)((*j)->get_vec_y());
+              index++;
+            /*} else {
+                Cell * c = (*j);
+                ceDestroyBody(c->get_body());
+            }*/
+        }
+
+        consumption = csGridStep(signalGrid, n_bacteria, coords);
+    }
+
     if ( population->size() < get_param ( "population_max" ) ) {
 
         prog->world_update ( this );
         std::list<Cell *>::iterator j;
 
         // update each cell
-        for ( j=population->begin(); j!=population->end(); j++ ) {
+        int indice = 0;
+        for ( j=population->begin(); j!=population->end() && indice < n_bacteria; j++ ) {
 
+            if(get_param("nutrients") == 1.0)
+            {
+                available = consumption[indice];
+            }
+
+            (*j)->getPlasmidList()->macroPlasmid(this->t);
+            (*j)->check_action();
             (*j)->update();
 
             // check for divisions
-            Cell * d = (*j)->divide();
-            if ( d != NULL ) add_cell ( d );
+            /*Cell * d = (*j)->divide();
+            if ( d != NULL ) add_cell ( d );*/
+
+            if(!(*j)->marked_for_death())
+            {
+                Cell * d = (*j)->divide();
+                if ( d != NULL ) add_cell ( d );
+                indice++;
+            }
 
         }
 
@@ -385,12 +970,19 @@ void World::update ( void ) {
         for ( k=0; k<signal_list.size(); k++ )
             signal_list[k]->integrate ( get_sim_dt() );
 
-        for ( j=population->begin(); j!=population->end(); j++ )
+        for ( j=population->begin(); j!=population->end();)
+        {
             if ( (*j)->marked_for_death() ) {
                 Cell * c = (*j);
+                ceDestroyBody(c->get_body());
                 j = population->erase ( j );
                 delete c;
             }
+            else
+            {
+                j++;
+            }
+        }
 
         // chemostat updates
         /*if ( chemostat_mode ) {
@@ -415,6 +1007,17 @@ void World::update ( void ) {
             cpSpaceStep(space, get_chip_dt());
         }*/
 
+        if(get_param("signals") == 1.0)
+        {
+            if (this->grid_type == "continuous" && (this->diff_method == "matrix" || this->diff_method == "gro_original")) {
+                handler->update(this->diff_method, get_sim_dt());
+            } else if (this->grid_type == "digital" && (this->diff_method == "digital")) {
+                dhandler->update(this->diff_method, this->digital_prob);
+            } else if (this->grid_type == "digital" && (this->diff_method == "digital_proportion")) {
+                dhandler->update(this->diff_method, this->digital_prop);
+            }
+        }
+
         t += get_sim_dt();
 
         if ( print_rate > 0 && step % print_rate == 0 )
@@ -428,6 +1031,8 @@ void World::update ( void ) {
         set_stop_flag(true);
 
     }
+
+    randomize_population();
 
 }
 
@@ -483,6 +1088,32 @@ void World::print ( void ) {
 
     }
 
+}
+
+void World::create_dirs ( const char * path , int n )
+{
+    int i = 0, j = 0;
+    char * command = (char *)malloc(2048*sizeof(char));
+    char * dirs = (char *)malloc(2048*sizeof(char));
+    char * number = (char *)malloc(5*sizeof(char));
+    strcpy(command, "mkdir ");
+    strcat(command, path);
+    dirs[0] = '{';
+    j++;
+    for ( i = 0; i < (n-1); i++ )
+    {
+        sprintf(number, "%d", i+1);
+        strcat(dirs, number);
+        strcat(dirs, ",");
+    }
+    sprintf(number, "%d", i+1);
+    strcat(dirs, number);
+    strcat(dirs, "}");
+    strcat(command, dirs);
+    system(command);
+    free(command);
+    free(dirs);
+    free(number);
 }
 
 bool World::snapshot ( const char * path ) {
@@ -607,6 +1238,29 @@ void World::scatter ( float x, float y, float width, float height, int channel1,
 #endif
 }
 
+void World::randomize_population ( void )
+{
+    if(population->size() >= 2)
+    {
+        std::list<Cell *> * tmp_population;
+        std::list<Cell *>::iterator it;
+        tmp_population = new std::list<Cell *>;
+
+        int n = population->size(), r=0;
+
+        while(n>0)
+        {
+            r = rand()%n;
+            it = population->begin();
+            std::advance(it,r);
+            tmp_population->push_back(*it);
+            population->erase(it);
+            n--;
+        }
+        population = tmp_population;
+    }
+}
+
 void World::select_cells ( int x1, int y1, int x2, int y2 ) {
 
     std::list<Cell *>::iterator i;
@@ -635,6 +1289,43 @@ void World::deselect_all_cells ( void ) {
 
 }
 
+void World::select_random_cell ( void ) {
+
+    std::list<Cell *>::iterator i;
+    int whichOne = rand()%population->size();
+    int j = 0;
+
+
+    for ( i=population->begin(); i!=population->end() && j != whichOne; i++ ) {
+        j++;
+    }
+
+    (*i)->select();
+
+}
+
+int World::check_gen_cond_pop ( std::vector<std::pair<std::string, int>> cond ) {
+
+    int n = 0;
+    std::list<Cell *>::iterator i;
+    for ( i=population->begin(); i!=population->end(); i++ )
+    {
+        n += (*i)->check_gen_condition(cond);
+    }
+    return n;
+}
+
+int World::check_plasmid_cond_pop ( std::vector<std::pair<std::string, int>> cond ) {
+
+    int n = 0;
+    std::list<Cell *>::iterator i;
+    for ( i=population->begin(); i!=population->end(); i++ )
+    {
+        n += (*i)->check_plasmid_condition(cond);
+    }
+    return n;
+}
+
 void World::dump ( FILE * fp ) {
 
     std::list<Cell *>::iterator i;
@@ -647,6 +1338,97 @@ void World::dump ( FILE * fp ) {
                   (*i)->get_rep(GFP), (*i)->get_rep(RFP), (*i)->get_rep(YFP), (*i)->get_rep(CFP) );
     }
 
+}
+
+float World::dump_left ( void ) {
+
+    float min = 50000, x = 0;
+    std::list<Cell *>::iterator i;
+
+    for ( i=population->begin(); i!=population->end(); i++ ) {
+        x = (*i)->get_x();
+        if(x < min)
+        {
+            min = x;
+        }
+    }
+    return( min );
+}
+
+float World::dump_right ( void ) {
+
+    float max = -50000, x = 0;
+    std::list<Cell *>::iterator i;
+
+    for ( i=population->begin(); i!=population->end(); i++ ) {
+        x = (*i)->get_x();
+        if(x > max)
+        {
+            max = x;
+        }
+    }
+    return( max );
+
+}
+
+float World::dump_top ( void ) {
+
+    float min = 50000, y = 0;
+    std::list<Cell *>::iterator i;
+
+    for ( i=population->begin(); i!=population->end(); i++ ) {
+        y = (*i)->get_y();
+        if(y < min)
+        {
+            min = y;
+        }
+    }
+    return( min );
+}
+
+float World::dump_bottom ( void ) {
+
+    float max = -50000, y = 0;
+    std::list<Cell *>::iterator i;
+
+    for ( i=population->begin(); i!=population->end(); i++ ) {
+        y = (*i)->get_y();
+        if(y > max)
+        {
+            max = y;
+        }
+    }
+    return( max );
+
+}
+
+FnPointer World::get_action( std::string str ) {
+    std::map<std::string,FnPointer>::iterator it;
+    if(map_actions.find(str) == map_actions.end())
+        return NULL;
+
+    it = map_actions.find(str);
+    return (*it).second;
+}
+
+bool World::get_output_started()
+{
+    return this->output_started;
+}
+
+void World::set_output_started(bool v)
+{
+    this->output_started = v;
+}
+
+bool World::get_output_started2()
+{
+    return this->output_started2;
+}
+
+void World::set_output_started2(bool v)
+{
+    this->output_started2 = v;
 }
 
 void World::add_barrier ( float x1, float y1, float x2, float y2 ) {

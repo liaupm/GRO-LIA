@@ -44,9 +44,14 @@
 #include "Defines.h"
 #include "Utility.h"
 
+#include "Grid.h"
+
 #ifndef NOGUI
 #include "Theme.h"
 #endif
+
+#include "erreenege.h"
+#include "GenListPlasmid.h"
 
 //void set_throttle ( bool val );
 void register_gro_functions ( void );
@@ -178,6 +183,8 @@ struct Barrier {
 
 class GroThread;
 
+typedef void (Cell::*FnPointer)(std::list<std::string>);
+
 class World { 
 
  public:
@@ -195,6 +202,7 @@ class World {
 
   void init ();
   void restart ( void );
+  void replating (float);
   void update ();
 
 #ifndef NOGUI
@@ -225,6 +233,7 @@ class World {
   void print ( void );
   void set_print_rate ( int r ) { print_rate = r; }
 
+  void create_dirs ( const char * path, int n );
   bool snapshot ( const char * path );
   void set_movie_rate ( int r ) { movie_rate = r; }
 
@@ -234,12 +243,14 @@ class World {
   float get_time ( void ) { return t; }
 
   int get_pop_size ( void ) { return population->size(); }
+  void randomize_population ( void );
 
   void message ( int i, std::string str ) { message_handler.add_message ( i, str.c_str() ); }
   void clear_messages ( int i ) { message_handler.clear_messages(i); }
 
   void select_cells ( int x1, int y1, int x2, int y2 );
   void deselect_all_cells ( void );
+  void select_random_cell ( void );
 
   inline void  set_sim_dt ( float x ) { parameters["dt"] = x; }
   inline float get_sim_dt ( void ) { return parameters["dt"]; }
@@ -267,7 +278,7 @@ class World {
 
   void set_theme ( Value * v );
 
-  void set_zoom ( float z ) { zoom = z; };
+  void set_zoom ( float z ) { zoom = z; } //;
 
 #ifndef NOGUI
   Theme * get_theme ( void ) { return &theme; }
@@ -280,14 +291,125 @@ class World {
 
   std::vector<FILE *> fileio_list;
 
+  int check_gen_cond_pop ( std::vector<std::pair<std::string, int>> );
+  int check_plasmid_cond_pop ( std::vector<std::pair<std::string, int>> );
+
   void dump ( FILE * fp );
+  float dump_left ( void );
+  float dump_right ( void );
+  float dump_top ( void );
+  float dump_bottom ( void );
 
   void add_barrier ( float x1, float y1, float x2, float y2 );
+
+
+  //CORREGIR TODAS LAS FUNCIONES DE ACCION
+  void add_action_prot(std::map<std::string, int> b){action_prot_list.push_back(b);}
+  void add_action_param( std::list<std::string> ls){action_param_list.push_back(ls);}
+  void add_action_names ( std::string s ){action_names.push_back (s);}
+
+  void remove_all_actions();
+
+  std::map<std::string, int> get_action_prot(int f){return action_prot_list[f];}
+  std::string get_action_name(int i) {return action_names[i];}
+  std::list<std::string> get_action_param( int i){return action_param_list[i];}
+
+  int get_num_actions ( void ) { return num_actions; }
+  void set_num_actions ( int n ) { num_actions=n; }
+
+  FnPointer get_action (std::string);
+
+  inline void init_actions_map()
+  {
+      map_actions.insert(std::make_pair("paint",&Cell::paint_from_list));
+      map_actions.insert(std::make_pair("d_paint",&Cell::delta_paint_from_list));
+      map_actions.insert(std::make_pair("die",&Cell::die_from_list));
+      map_actions.insert(std::make_pair("conjugate",&Cell::conjugate_from_list));
+      map_actions.insert(std::make_pair("conjugate_directed",&Cell::conjugate_directed_from_list));
+      //map_actions.insert(std::make_pair("c_and_p",&Cell::conj_and_paint_from_list));
+      map_actions.insert(std::make_pair("lose_plasmid",&Cell::lose_plasmid_from_list));
+      map_actions.insert(std::make_pair("set_eex",&Cell::set_eex_from_list));
+      map_actions.insert(std::make_pair("remove_eex",&Cell::remove_eex_from_list));
+      map_actions.insert(std::make_pair("set_growth_rate",&Cell::change_gt_from_list));
+      map_actions.insert(std::make_pair("emit_cf",&Cell::emit_cross_feeding_signal_from_list));
+      map_actions.insert(std::make_pair("get_cf",&Cell::get_cross_feeding_signal_from_list));
+      map_actions.insert(std::make_pair("s_absorb_signal_area", &Cell::s_absorb_signal_area));
+      map_actions.insert(std::make_pair("s_absorb_signal", &Cell::s_absorb_signal));
+      map_actions.insert(std::make_pair("s_emit_signal_area", &Cell::s_emit_signal_area));
+      map_actions.insert(std::make_pair("s_emit_signal", &Cell::s_emit_signal));
+      map_actions.insert(std::make_pair("s_get_signal", &Cell::s_get_signal));
+      map_actions.insert(std::make_pair("s_get_signal_area", &Cell::s_get_signal_area));
+      map_actions.insert(std::make_pair("s_absorb_QS", &Cell::s_absorb_QS));
+      map_actions.insert(std::make_pair("s_get_QS", &Cell::s_get_QS));
+      //map_actions.insert(std::make_pair("s_set_signal_multiple", &Cell::s_set_signal_multiple));
+      map_actions.insert(std::make_pair("s_set_signal", &Cell::s_set_signal));
+      map_actions.insert(std::make_pair("s_set_signal_rect", &Cell::s_set_signal_rect));
+      map_actions.insert(std::make_pair("s_emit_cf",&Cell::s_emit_cross_feeding_signal_from_list));
+      map_actions.insert(std::make_pair("s_get_cf",&Cell::s_get_cross_feeding_signal_from_list));
+      map_actions.insert(std::make_pair("s_absorb_cf",&Cell::s_absorb_cross_feeding_signal_from_list));
+
+  }
+
+  bool get_output_started();
+  void set_output_started(bool);
+  bool get_output_started2();
+  void set_output_started2(bool);
+
+  inline GenListPlasmid* get_globalPlasmidList() {return plasmidList;}
+  inline GenPlasmid* get_globalPlasmid() {return globalPlasmid;}
+  inline GenOperon* get_globalOperon() {return globalOperon;}
+
+  inline erreenege* getRNG(){return(this->rng);}
+  inline void setRNG(erreenege* r){this->rng = r;}
+
+  inline void add_cross_feeding_max_emit(int id, float conc)
+  {
+      cross_feeding_max_emit.insert(std::make_pair(id,conc));
+  }
+
+  inline float get_cross_feeding_max_emit(int id)
+  {
+      return(cross_feeding_max_emit[id]);
+  }
+
+  inline void set_cross_feeding_max_emit(int id, float v)
+  {
+      cross_feeding_max_emit[id] = v;
+  }
+
+  inline void add_cross_feeding_max_absorb(int id, float conc)
+  {
+      cross_feeding_max_absorb.insert(std::make_pair(id,conc));
+  }
+
+  inline float get_cross_feeding_max_absorb(int id)
+  {
+      return(cross_feeding_max_absorb[id]);
+  }
+
+  inline void set_cross_feeding_max_absorb(int id, float v)
+  {
+      cross_feeding_max_absorb[id] = v;
+  }
+
+  Grid<CSCell>* handler = nullptr;
+  Grid<DBCell>* dhandler = nullptr;
+  //std::map<int, std::string> diff_methods;
+  //std::vector<GReaction> reactions;
+  std::string grid_type = "";
+  std::string diff_method = "";
+  float digital_prob = 0.0;
+  int digital_prop = 0;
+  std::map<int,double> signal_concs;
+  int s_signal_id;
+  std::map<int,float> cross_feeding_max_emit;
+  std::map<int,float> cross_feeding_max_absorb;
 
  private:
 
   //cpSpace * space;
   ceSpace * space;
+  signalGrid_t * signalGrid;
   std::list<Cell *> * population;
   std::vector<Signal *> signal_list;
   std::vector<Reaction> reaction_list;
@@ -299,10 +421,31 @@ class World {
   float t;
   float max_val;
   bool program_initialized;
+  bool program_restarted;
   std::string gro_message;
   MessageHandler message_handler;
   float zoom;
   std::list<Barrier> * barriers;
+
+  std::vector<std::map<std::string, int> > action_prot_list;
+  std::vector<std::list<std::string> > action_param_list; //lista de parametros de funciones
+  std::vector<std::string> action_names;
+
+  typedef std::map<std::string,FnPointer> actions; //mapa de nombres de funciones
+  actions map_actions;
+
+  int num_actions;
+
+  //CellPro
+  erreenege *rng;
+  GenListPlasmid *plasmidList;
+  GenPlasmid* globalPlasmid;
+  GenOperon* globalOperon;
+  GenPromoter* globalPromoter;
+
+  int stt_time;
+
+  bool output_started, output_started2;
 
 #ifndef NOGUI
   Theme theme;

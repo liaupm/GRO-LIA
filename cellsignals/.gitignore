@@ -1,0 +1,7 @@
+*.*~
+*.*~
+*~
+build/
+src/BlockCell.cpp
+include/BlockCell.h
+

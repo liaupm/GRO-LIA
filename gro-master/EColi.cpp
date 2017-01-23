@@ -19,35 +19,33 @@
 
 #include "EColi.h"
 #include "Programs.h"
+#include <iostream>
+#include <math.h>
+#include <limits>
+
+#ifdef _WIN32
+#include "Rands.h"
+#endif //_WIN32
+
+using namespace std;
 
 #define FMULT 0.125
 
 void EColi::compute_parameter_derivatives ( void ) {
-
-  lambda = sqrt ( 10 * get_param ( "ecoli_growth_rate" ) * get_param ( "ecoli_growth_rate" )  / get_param ( "ecoli_division_size_variance" ) );
-  div_vol = get_param ( "ecoli_division_size_mean" ) - get_param ( "ecoli_growth_rate" ) * 10 / lambda;
-
 }
 
-EColi::EColi ( World * w, float x, float y, float a, float v ) : Cell ( w ), volume ( v ) {
+EColi::EColi ( World * w, float x, float y, float a) : Cell ( w ) {
 
-  compute_parameter_derivatives();
+  //float sd = get_param ( "ecoli_division_size_variance" );
+  float sd = get_param ( "ecoli_division_size_variance" );
+  float sd_init = sd*4;
+  div_length = get_param ( "ecoli_division_length_mean" ) - sd + frand() * sd * 2;
+  init_length = get_param ("ecoli_init_length") - sd_init + frand() * sd_init * 2;
+  length= init_length;
+  d_length = 0;
+  d_vol = 0;
 
-  float size = DEFAULT_ECOLI_SCALE*get_length();
-  /*MAKE_VERTS;
-
-  body = cpSpaceAddBody(space, cpBodyNew(MASS, cpMomentForPoly(MASS, 8, verts, cpvzero)));
-
-  body->p = cpv ( x, y );
-  body->v = cpv ( 0, 0 );
-  body->a = a;
-        
-  shape = cpSpaceAddShape(space, cpPolyShapeNew(body, 8, verts, cpvzero)); // deleted in ~Cell
-  shape->e = ELASTIC; shape->u = FRICTION;*/
-
-  //cpSpaceActivateBody(space,body);
-
-  body = ceCreateBody(w->get_space(), size, ceGetVector2(x,y), a);
+  body = ceCreateBody(w->get_space(), DEFAULT_ECOLI_SCALE * init_length, ceGetVector2(x,y), a);
 
   ceSetData(body, this);
 
@@ -58,13 +56,20 @@ EColi::EColi ( World * w, float x, float y, float a, float v ) : Cell ( w ), vol
   div_count = 0;
   force_div = false;
 
+  this->my_available = 0;
+
+  this->gt_inst = (log(this->div_length/this->init_length))/get_param ( "ecoli_growth_rate" );
+
 }
 
-EColi::EColi ( World * w, float v, ceBody* body ) : Cell ( w ), volume ( v ) {
+EColi::EColi ( World * w, ceBody* body ) : Cell ( w ) {
 
-  compute_parameter_derivatives();
-
-  float size = DEFAULT_ECOLI_SCALE*get_length();
+  float sd = get_param ( "ecoli_division_size_variance" );
+  div_length = get_param ( "ecoli_division_length_mean" ) - sd + frand() * sd * 2;
+  init_length = body->length / DEFAULT_ECOLI_SCALE;
+  length= init_length;
+  d_length = 0;
+  d_vol = 0;
 
   this->body = body;
   ceSetData(body, this);
@@ -75,6 +80,10 @@ EColi::EColi ( World * w, float v, ceBody* body ) : Cell ( w ), volume ( v ) {
 
   div_count = 0;
   force_div = false;
+
+  this->my_available = 0;
+
+  this->gt_inst = (log(this->div_length/this->init_length))/get_param ( "ecoli_growth_rate" );
 
 }
 
@@ -88,11 +97,23 @@ void EColi::render ( Theme * theme, GroPainter * painter ) {
   //cpPolyShape * poly = (cpPolyShape *) shape;
   //int count = poly->numVerts;
 
-  double
+  /*double
     gfp = ( rep[GFP] / volume - world->get_param ( "gfp_saturation_min" ) ) / ( world->get_param ( "gfp_saturation_max" ) - world->get_param ( "gfp_saturation_min" ) ),
     rfp = ( rep[RFP] / volume - world->get_param ( "rfp_saturation_min" ) ) / ( world->get_param ( "rfp_saturation_max" ) - world->get_param ( "rfp_saturation_min" ) ),
     yfp = ( rep[YFP] / volume - world->get_param ( "yfp_saturation_min" ) ) / ( world->get_param ( "yfp_saturation_max" ) - world->get_param ( "yfp_saturation_min" ) ),
-    cfp = ( rep[CFP] / volume - world->get_param ( "cfp_saturation_min" ) ) / ( world->get_param ( "cfp_saturation_max" ) - world->get_param ( "cfp_saturation_min" ) );
+    cfp = ( rep[CFP] / volume - world->get_param ( "cfp_saturation_min" ) ) / ( world->get_param ( "cfp_saturation_max" ) - world->get_param ( "cfp_saturation_min" ) );*/
+
+  /*double
+    gfp = ( rep[GFP] / length - world->get_param ( "gfp_saturation_min" ) ) / ( world->get_param ( "gfp_saturation_max" ) - world->get_param ( "gfp_saturation_min" ) ),
+    rfp = ( rep[RFP] / length - world->get_param ( "rfp_saturation_min" ) ) / ( world->get_param ( "rfp_saturation_max" ) - world->get_param ( "rfp_saturation_min" ) ),
+    yfp = ( rep[YFP] / length - world->get_param ( "yfp_saturation_min" ) ) / ( world->get_param ( "yfp_saturation_max" ) - world->get_param ( "yfp_saturation_min" ) ),
+    cfp = ( rep[CFP] / length - world->get_param ( "cfp_saturation_min" ) ) / ( world->get_param ( "cfp_saturation_max" ) - world->get_param ( "cfp_saturation_min" ) );*/
+
+  double
+    gfp = ( rep[GFP]  - world->get_param ( "gfp_saturation_min" ) ) / ( world->get_param ( "gfp_saturation_max" ) - world->get_param ( "gfp_saturation_min" ) ),
+    rfp = ( rep[RFP]  - world->get_param ( "rfp_saturation_min" ) ) / ( world->get_param ( "rfp_saturation_max" ) - world->get_param ( "rfp_saturation_min" ) ),
+    yfp = ( rep[YFP]  - world->get_param ( "yfp_saturation_min" ) ) / ( world->get_param ( "yfp_saturation_max" ) - world->get_param ( "yfp_saturation_min" ) ),
+    cfp = ( rep[CFP]  - world->get_param ( "cfp_saturation_min" ) ) / ( world->get_param ( "cfp_saturation_max" ) - world->get_param ( "cfp_saturation_min" ) );
 
   theme->apply_ecoli_edge_color ( painter, is_selected() );
 
@@ -127,6 +148,13 @@ void EColi::render ( Theme * theme, GroPainter * painter ) {
   painter->translate(-center.x, -center.y);
 
   painter->setBrush(col);
+  /*if(d_length <= 0.0f)
+      {
+
+          painter->setBrush( QColor ("#4172C4"));
+
+
+  }*/
   painter->drawRoundedRect(center.x - length/2, center.y - WIDTH/2, length, WIDTH, WIDTH/2, WIDTH/2);
 
   painter->translate(center.x, center.y);
@@ -138,25 +166,42 @@ void EColi::render ( Theme * theme, GroPainter * painter ) {
 
 void EColi::update ( void ) {
 
-  float dvolume = get_param ( "ecoli_growth_rate" ) * rand_exponential ( 1 / world->get_sim_dt() ) * volume;
-  //volume += get_param ( "ecoli_growth_rate" ) * rand_exponential ( 1 / world->get_sim_dt() ) * volume;
-  volume += dvolume;
-
-  if ( volume > div_vol && frand() < lambda * world->get_sim_dt() )
-    div_count++;
-
-  float size = DEFAULT_ECOLI_SCALE*get_length();
+    float threshold = get_param("nutrient_consumption_rate");
+    this->monod = 1.0;
+    this->d_length = 0;
 
 
-  // CONSULTAR CON PAULA Y LUIS
-  ceGrowBody(body, 10*dvolume/(0.25*CE_PI));
+    if(get_param("nutrients") == 1.0)
+    {
+        if (available <= 0) {
+             available = 0;
+             this->monod = 0;
+             d_length = 0;
+         } else {
+            this->monod = ( available/(available+threshold) );
+            d_length = get_param ( "ecoli_growth_rate" ) * this->monod * world->get_sim_dt() * this->cross_input_coefficient * length;
+         }
+    }
+    else
+    {
+        this->monod = 1.0;
+        d_length = get_param ( "ecoli_growth_rate" ) *this->monod * world->get_sim_dt() * this->cross_input_coefficient * length;
+    }
 
-  /*MAKE_VERTS;
-  cpPolyShapeSetVerts ( shape, 8, verts, cpvzero );*/
+    this->gt_inst = (log(this->div_length/this->init_length))/(get_param ( "ecoli_growth_rate" )* this->monod * this->cross_input_coefficient);
 
-  if ( program != NULL )
-    program->update ( world, this );
+    length += d_length;
+    d_vol = d_length;
 
+    ceGrowBody(body, 10*d_length);
+
+    if (length > div_length)
+    {
+        div_count++;
+    }
+
+    if ( program != NULL )
+         program->update ( world, this );
 }
 
 Value * EColi::eval ( Expr * e ) {
@@ -168,40 +213,75 @@ Value * EColi::eval ( Expr * e ) {
 
 EColi * EColi::divide ( void ) {
 
-  if ( div_count >= 10 || force_div ) {
-
-    int r = frand() > 0.5 ? 1 : -1;
+  if ( div_count >= 1 || force_div ) {
 
     div_count = 0;
     force_div = false;
 
     float frac = 0.5 + 0.1 * ( frand() - 0.5 );
-    float oldvol = volume;
-    float oldsize = DEFAULT_ECOLI_SCALE * get_length();
 
-    volume = frac * oldvol;
-    //float a = shape->body->a;
-    float a = body->rotation;
+    length = frac * length;
+    init_length = length;
+
     float da = 0.25 * (frand()-0.5);
 
-    float size = DEFAULT_ECOLI_SCALE * get_length();    
-    /*MAKE_VERTS;
-
-    cpPolyShapeSetVerts ( shape, 8, verts, cpvzero );
-    cpVect oldpos = shape->body->p;
-    shape->body->p = oldpos + cpvmult ( cpv ( cos ( a - r*da ),
-                                              sin ( a - r*da ) ),  (-r)*0.5*oldsize*(1-frac) );
-    shape->body->a = a - r*da;*/
-
     ceBody* daughterBody = ceDivideBody(body, da, frac);
-    float dvol = (1-frac)*oldvol;
 
-    /*EColi * daughter = new EColi ( world, oldpos.x + r*0.5*oldsize*frac*cos ( a + r*da ),
-                                 oldpos.y + r*0.5*oldsize*frac*sin ( a + r*da ), a+r*da, dvol );*/
-    EColi * daughter = new EColi ( world, dvol, daughterBody );
+    EColi * daughter = new EColi ( world, daughterBody );
  
+    for(auto copy : *(this->getPlasmidList()->getPlasmids()))
+    {
+        daughter->getPlasmidList()->insertPlasmid(copy->getName(), copy);
+        for(auto ops : *(copy->getOperons()))
+        {
+            if(!ops->getNoisef())
+            {
+                ops->setNoise(world->get_time(), world->get_sim_dt());
+            }
+        }
+    }
+
+    for(auto pls : *(daughter->getPlasmidList()->getPlasmids()))
+    {
+        pls->setParent(daughter->getPlasmidList());
+        pls->setEnvPlasmid(daughter->getEnvPlasmid());
+        for(auto ops : *(pls->getOperons()))
+        {
+            ops->getPromoter()->setListPlasmid(daughter->getPlasmidList());
+        }
+        daughter->getPlasmidList()->setRNG(world->getRNG());
+        for(auto ops : *(pls->getOperons()))
+        {
+            ops->setNoise(world->get_time(), world->get_sim_dt());
+        }
+    }
+
+    std::vector<GenCell*> temp_list_dec;
+    std::vector<GenCell*> temp_list_act;
+    for(auto pls : *(daughter->getPlasmidList()->getPlasmids()))
+    {
+        temp_list_act.clear();
+        temp_list_dec.clear();
+        for(auto ops: *(pls->getOperons()))
+        {
+            for(auto gen: (*(ops->getGens())))
+            {
+                if((gen->getTime() >= 0) && gen->getState() == 1)
+                {
+                    temp_list_dec.push_back(gen);
+                }
+
+                if((gen->getTime() >= 0) && gen->getState() == 0)
+                {
+                    temp_list_act.push_back(gen);
+                }
+            }
+        }
+        pls->setActList(temp_list_act);
+        pls->setDecList(temp_list_dec);
+    }
+
     daughter->set_param_map ( get_param_map() );
-    daughter->compute_parameter_derivatives();
 
     if ( gro_program != NULL ) {
       daughter->set_gro_program ( split_gro_program ( gro_program, frac ) );
@@ -217,6 +297,8 @@ EColi * EColi::divide ( void ) {
     set_division_indicator(true);
     daughter->set_division_indicator(true);
     daughter->set_daughter_indicator(true);
+
+
 
     return daughter;
 

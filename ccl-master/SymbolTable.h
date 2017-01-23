@@ -206,6 +206,7 @@ public:
   inline void print ( void ) { print ( stdout ); }
   void print_as_record ( FILE * fp );
   void print_as_record_to_string ( std::string * str );
+  std::list<std::string> field_names_as_string_list ( void );
   void record_tostring_aux ( std::stringstream * strm );
   void print_as_record_type ( void );
   SymbolTable * copy ( void );

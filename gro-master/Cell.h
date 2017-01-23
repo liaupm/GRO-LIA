@@ -24,6 +24,7 @@
 //#include "chipmunk_unsafe.h"
 #include "CellEngine.h"
 #include "CellNutrient.h"
+#include "GenListPlasmid.h"
 #include "ccl.h"
 #include "Defines.h"
 #include "Utility.h"
@@ -44,6 +45,9 @@
 #include <vector>
 #include <string>
 #include <map>
+
+#define UNDIRECTED 0
+#define DIRECTED 1
 
 
 class World;
@@ -82,10 +86,6 @@ class Cell {
 
   void set_prog ( MicroProgram * p ) { program = p; }
 
-  /*float get_x ( void ) { return shape->body->p.x; }
-  float get_y ( void ) { return shape->body->p.y; }
-  float get_theta ( void ) { return shape->body->a; }*/
-
   float get_x ( void ) { return body->center.x; }
   float get_y ( void ) { return body->center.y; }
   float get_vec_x ( void ) { return body->halfDimensionAABB.x; }
@@ -102,9 +102,6 @@ class Cell {
   virtual Cell * divide ( void ) { return NULL; }
 
   ceBody * get_body ( void ) { return body; }
-
-  //cpShape * get_shape ( void ) { return shape; }
-  //cpBody * get_body ( void ) { return body; }
 
   void set_id ( int i ) { id = i; }
   int get_id ( void ) { return id; }
@@ -138,16 +135,103 @@ class Cell {
   inline bool just_divided ( void ) { return divided; }
   inline bool is_daughter ( void ) { return daughter; }
 
+
+  /*void jc_reset ( void );
+  void set_was_just_conjugated ( int, bool );
+  bool was_just_conjugated ( int ) const;
+  void set_conjugated_indicator ( int, bool );
+  bool get_conjugated_indicator ( int ) const;*/
+
+  inline GenListPlasmid* getPlasmidList ( void ) { return plasmidList; }
+  inline void setPlasmidList (GenListPlasmid* l) { this->plasmidList = l; }
+
+  inline GenPlasmid* getEnvPlasmid ( void ) { return plasEnv; }
+  inline void setEnvPlasmid (GenPlasmid* env) { this->plasEnv = env; }
+
+  inline float get_d_vol ( void ) { return d_vol; }
+  inline float get_available( void ) { return my_available; }
+
+  inline float get_input_cf_coef() { return cross_input_coefficient;}
+  inline void set_input_cf_coef(float v) {this->cross_input_coefficient = v;}
+
+  inline float get_output_cf_coef() { return cross_output_coefficient;}
+  inline void set_output_cf_coef(float v) {this->cross_output_coefficient = v;}
+
+  /*inline bool was_just_conjugated ( int n ) { return just_conjugated_reset[n]; }
+  inline void set_conjugated_indicator ( int n, bool val ) { just_conjugated[n] = val; }*/
+
   virtual void force_divide ( void ) {}
+
+  /*void markForConjugation (int , int mode);
+  void conjugate(int, double);
+  void transfer_plasmid(int);
+  void conjugate_directed(int, double);*/
+
+  //void print_state();
+
+  float get_gt_inst(void);
+
+  int getNProts(void);
+  void setNProts(int);
+
+  /*void set_initial_protein(int, bool);
+  void set_initial_last_state(void);
+
+  void set_initial_rna(int, bool);*/
+
+  /*void set_analog_molecule(int i, int val) {analog_molecules_list[i]=val;}
+  bool get_analog_molecule(int i) {return analog_molecules_list[i];}*/
+
+  int check_gen_condition(std::vector<std::pair<std::string, int>>);
+  int check_plasmid_condition(std::vector<std::pair<std::string, int>>);
+
+  //bool can_express_protein(int i); <-- OJO: tiene que ver con las señales que son necesarias para inhibir o expresar una proteina ej: IPTG vs LacI.
+
+  void conjugate(std::string, double, int);
+
+  void check_action();
+
+  float get_n_cells_d(float);
+  float area_concentration(int, float);
+
+  void paint_from_list(std::list<std::string> ls);
+  void conjugate_from_list(std::list<std::string> ls);
+  void conjugate_directed_from_list(std::list<std::string> ls);
+  void lose_plasmid_from_list(std::list<string> ls);
+  void set_eex_from_list(std::list<string> ls);
+  void remove_eex_from_list(std::list<string> ls);
+  void die_from_list(std::list<string> ls);//{this->mark_for_death();}
+  //void die_from_list();
+  void conj_and_paint_from_list(std::list<std::string> ls);
+  void delta_paint_from_list(std::list<string> ls);
+  void change_gt_from_list(std::list<std::string> ls);
+  void emit_cross_feeding_signal_from_list(std::list<std::string> ls);
+  void get_cross_feeding_signal_from_list(std::list<std::string> ls);
+
+  void s_absorb_signal_area(std::list<std::string> ls);
+  void s_absorb_signal(std::list<std::string> ls);
+  void s_emit_signal_area(std::list<std::string> ls);
+  void s_emit_signal(std::list<std::string> ls);
+  void s_get_signal_area(std::list<std::string> ls);
+  void s_get_signal(std::list<std::string> ls);
+  void s_absorb_QS(std::list<std::string> ls);
+  void s_get_QS(std::list<std::string> ls);
+  /*void s_set_signal_multiple(std::list<std::string> ls);*/
+  void s_set_signal(std::list<std::string> ls);
+  void s_set_signal_rect(std::list<std::string> ls);
+  void s_emit_cross_feeding_signal_from_list(std::list<std::string> ls);
+  void s_get_cross_feeding_signal_from_list(std::list<std::string> ls);
+  void s_absorb_cross_feeding_signal_from_list(std::list<std::string> ls);
+
+  //HACER UNA ACCION QUE REPRIMA POR SEÑAL... Es parecida a s_absorb_QS o s_get_QS, pero que toma un gen como parametro y lo reprime o activa.
+
+
+  void state_to_file(FILE *fp);
 
  protected:
 
   ceSpace * space;
   ceBody * body;
-
-  //cpSpace * space;
-  //cpShape * shape;
-  //cpBody * body;
 
   int q[MAX_STATE_NUM],
     rep[MAX_REP_NUM];
@@ -159,12 +243,34 @@ class Cell {
 
   // these ought to be gotten rid of
   float growth_rate,
-    division_size_mean,
-    division_size_variance;
+  old_growth_rate,
+  division_size_mean,
+  division_size_variance;
+
+  int num_analog_molecules;
+  int n_prots;
+
+  GenListPlasmid *plasmidList;
+  GenPlasmid *plasEnv;
+
+  /*int num_analog_molecules;*/
+
+  bool * analog_molecules_list; // Que moleculas se leen desde la bacteria... esto esta pensado para senales analogicas
 
   bool marked, divided, daughter, selected;
+  //bool markForConj;
+
+  float gt_inst;
 
   std::map<std::string,float> parameters;
+
+  //float in_vol, gt_inst;
+  float in_vol, d_vol;
+  float monod;
+  float my_available;
+
+  float cross_output_coefficient;
+  float cross_input_coefficient;
 
 };
 

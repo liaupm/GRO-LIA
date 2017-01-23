@@ -173,7 +173,7 @@ sector_t _Center(signalGrid_t* grid)
 
 unsigned int _randRange(unsigned int M, unsigned int N)
 {
-    struct timespec ts;
+    /*struct timespec ts;
 
     #ifdef __MACH__ // OS X does not have clock_gettime, use clock_get_time
     clock_serv_t cclock;
@@ -186,7 +186,7 @@ unsigned int _randRange(unsigned int M, unsigned int N)
 
     #else
     clock_gettime(CLOCK_REALTIME, &ts);
-    #endif
+    #endif*/
 
     return rand()%((N+1)-M)+M;
 }
