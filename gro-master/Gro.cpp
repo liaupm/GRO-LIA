@@ -376,6 +376,7 @@ Value *new_operon (std::list<Value *> * args, Scope * s )
     Value* noise = NULL;
     float onNoise = 0.0;
     float offNoise = 0.0;
+    bool signal = false;
 
     Value * proteinAtimes = NULL;
     Value * rnaAtimes = NULL;
@@ -458,48 +459,70 @@ Value *new_operon (std::list<Value *> * args, Scope * s )
                         {
                             gate = 6;
                         }
+                        else if(circuit.compare("SIGNAL") == 0 || circuit.compare("signal") == 0)
+                        {
+                            gate = 3;
+                            signal = true;
+                        }
                     }
                     op->getPromoter()->setGate(gate);
                 }
-                if( promoter->getField( "transcription_factors" ) && promoter->getField( "transcription_factors" )->get_type() == Value::LIST)
+                if(!signal)
                 {
-                    transcription_factors = promoter->getField( "transcription_factors" )->list_value();
-                    if(transcription_factors != NULL)
+                    if( promoter->getField( "transcription_factors" ) && promoter->getField( "transcription_factors" )->get_type() == Value::LIST)
                     {
-                        std::vector<GenCell*> TD;
-                        std::vector<GenCell*> TA;
-                        j = transcription_factors->begin();
-                        do
+                        transcription_factors = promoter->getField( "transcription_factors" )->list_value();
+                        if(transcription_factors != NULL)
                         {
-                            temp_tf = (*j)->string_value();
-                            if(temp_tf.at(0) == '-')
+                            std::vector<GenCell*> TD;
+                            std::vector<GenCell*> TA;
+                            j = transcription_factors->begin();
+                            do
                             {
-                                regulation_value = -1;
-                                temp_tf.erase(temp_tf.begin());
-                            }
-                            else
-                            {
-                                regulation_value = 1;
-                            }
-                            if(world->get_globalPlasmidList()->getPlasmidById("listPP0")->getOperonById("listPP0O0")->getGen(temp_tf) == NULL)
-                            {
-                                GenCell* protein = new GenCell(temp_tf, 0, 0.0, 0.0);
-                                world->get_globalPlasmidList()->getPlasmidById("listPP0")->getOperonById("listPP0O0")->insertGens(protein);
-                            }
-                            if(regulation_value == -1)
-                            {
-                               TD.push_back(world->get_globalPlasmidList()->getPlasmidById("listPP0")->getOperonById("listPP0O0")->getGen(temp_tf));
-                            }
-                            else if(regulation_value == 1)
-                            {
-                               TA.push_back(world->get_globalPlasmidList()->getPlasmidById("listPP0")->getOperonById("listPP0O0")->getGen(temp_tf));
-                            }
-                            j++;
-                        }while(j!= transcription_factors->end());
+                                temp_tf = (*j)->string_value();
+                                if(temp_tf.at(0) == '-')
+                                {
+                                    regulation_value = -1;
+                                    temp_tf.erase(temp_tf.begin());
+                                }
+                                else
+                                {
+                                    regulation_value = 1;
+                                }
+                                if(world->get_globalPlasmidList()->getPlasmidById("listPP0")->getOperonById("listPP0O0")->getGen(temp_tf) == NULL)
+                                {
+                                    GenCell* protein = new GenCell(temp_tf, 0, 0.0, 0.0);
+                                    world->get_globalPlasmidList()->getPlasmidById("listPP0")->getOperonById("listPP0O0")->insertGens(protein);
+                                }
+                                if(regulation_value == -1)
+                                {
+                                   TD.push_back(world->get_globalPlasmidList()->getPlasmidById("listPP0")->getOperonById("listPP0O0")->getGen(temp_tf));
+                                }
+                                else if(regulation_value == 1)
+                                {
+                                   TA.push_back(world->get_globalPlasmidList()->getPlasmidById("listPP0")->getOperonById("listPP0O0")->getGen(temp_tf));
+                                }
+                                j++;
+                            }while(j!= transcription_factors->end());
 
-                        op->getPromoter()->setListTA(TA);
-                        op->getPromoter()->setListTD(TD);
+                            op->getPromoter()->setListTA(TA);
+                            op->getPromoter()->setListTD(TD);
+                        }
                     }
+                }
+                else
+                {
+                    std::vector<GenCell*> TD;
+                    std::vector<GenCell*> TA;
+                    temp_tf = "signaltempxyz";
+                    if(world->get_globalPlasmidList()->getPlasmidById("listPP0")->getOperonById("listPP0O0")->getGen(temp_tf) == NULL)
+                    {
+                        GenCell* protein = new GenCell(temp_tf, 0, 0.0, 0.0);
+                        world->get_globalPlasmidList()->getPlasmidById("listPP0")->getOperonById("listPP0O0")->insertGens(protein);
+                    }
+                    TA.push_back(world->get_globalPlasmidList()->getPlasmidById("listPP0")->getOperonById("listPP0O0")->getGen(temp_tf));
+                    op->getPromoter()->setListTA(TA);
+                    op->getPromoter()->setListTD(TD);
                 }
 
                 if( promoter->getField( "noise" ) && promoter->getField("noise")->get_type() == Value::RECORD)

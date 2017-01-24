@@ -631,19 +631,38 @@ void Cell::s_absorb_QS(std::list<std::string> ls)
     coords[3] = y_length;
 
     double sig_val;
+    std::map<std::string, int> plasmids;
+    std::map<std::string, int> operons;
+    bool has_noise = false;
+
+    plasmids = this->getPlasmidList()->isGenExist(protein);
+
     sig_val =  world->handler->getSignalValue(signal_id,coords,"exact");
 
-    //Probar eliminando gen del modulo genetico y activacion directa (recordar genD) y eliminar on/off (para que sea la proteina "genD" la que regule downstream)
-
-    if(!(this->getPlasmidList()->isGenExist(protein).empty()))
+    if(!(plasmids.empty()))
     {
-        if((compsign.compare(lt) == 0 && sig_val < threshold) || (compsign.compare(lt) != 0 && sig_val >= threshold))
+        for(auto pl : plasmids)
         {
-            this->getPlasmidList()->activateGen(protein);
+            operons = this->getPlasmidList()->getPlasmidById(pl.first)->isGenExist(protein);
+            for(auto ops : operons)
+            {
+                if(this->getPlasmidList()->getPlasmidById(pl.first)->getOperonById(ops.first)->getNoisef())
+                {
+                    has_noise = true;
+                }
+            }
         }
-        else
+
+        if(!has_noise)
         {
-            this->getPlasmidList()->deactivateGen(protein);
+            if(((compsign.compare(lt) == 0 && sig_val < threshold) || (compsign.compare(lt) != 0 && sig_val >= threshold)))
+            {
+                this->getPlasmidList()->activateGen(protein);
+            }
+            else
+            {
+                this->getPlasmidList()->deactivateGen(protein);
+            }
         }
     }
 
@@ -671,17 +690,38 @@ void Cell::s_get_QS(std::list<std::string> ls)
     coords[3] = y_length;
 
     double sig_val;
+    std::map<std::string, int> plasmids;
+    std::map<std::string, int> operons;
+    bool has_noise = false;
+
+    plasmids = this->getPlasmidList()->isGenExist(protein);
+
     sig_val =  world->handler->getSignalValue(signal_id,coords,"exact");
 
-    if(!(this->getPlasmidList()->isGenExist(protein).empty()))
+    if(!(plasmids.empty()))
     {
-        if((compsign.compare(lt) == 0 && sig_val < threshold) || (compsign.compare(lt) != 0 && sig_val >= threshold))
+        for(auto pl : plasmids)
         {
-            this->getPlasmidList()->activateGen(protein);
+            operons = this->getPlasmidList()->getPlasmidById(pl.first)->isGenExist(protein);
+            for(auto ops : operons)
+            {
+                if(this->getPlasmidList()->getPlasmidById(pl.first)->getOperonById(ops.first)->getNoisef())
+                {
+                    has_noise = true;
+                }
+            }
         }
-        else
+
+        if(!has_noise)
         {
-            this->getPlasmidList()->deactivateGen(protein);
+            if(((compsign.compare(lt) == 0 && sig_val < threshold) || (compsign.compare(lt) != 0 && sig_val >= threshold)))
+            {
+                this->getPlasmidList()->activateGen(protein);
+            }
+            else
+            {
+                this->getPlasmidList()->deactivateGen(protein);
+            }
         }
     }
 }
