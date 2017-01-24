@@ -416,7 +416,7 @@ void Cell::emit_cross_feeding_signal_from_list(std::list<std::string> ls)
     float signal_conc = this->world->get_cross_feeding_max_emit(signal_id);
     float dv_max = 0, dv = 0;
 
-    dv_max = get_param ( "ecoli_growth_rate_max" ) * this->get_volume() * this->world->get_sim_dt();
+    dv_max = get_param ( "ecoli_growth_rate" ) * this->get_volume() * this->world->get_sim_dt();
     dv = this->get_d_vol();
     this->cross_output_coefficient = dv/dv_max;
     if(this->cross_output_coefficient > 1.0)
@@ -433,7 +433,7 @@ void Cell::get_cross_feeding_signal_from_list(std::list<std::string> ls)
     int signal_id = std::atoi((*i).c_str()); i++;
     int benefit = std::atoi((*i).c_str());
     float signal_level = world->get_signal_value ( this, signal_id );
-    float growth_rate = get_param( "ecoli_growth_rate_max" );
+    float growth_rate = get_param( "ecoli_growth_rate" );
 
     switch(benefit)
     {
@@ -823,7 +823,7 @@ void Cell::s_emit_cross_feeding_signal_from_list(std::list<std::string> ls)
     coords[2] = x_length;
     coords[3] = y_length;
 
-    dl_max = get_param ( "ecoli_growth_rate_max" ) * this->get_volume() * this->world->get_sim_dt();
+    dl_max = get_param ( "ecoli_growth_rate" ) * this->get_volume() * this->world->get_sim_dt();
     dl = this->get_d_vol();
 
     this->cross_output_coefficient = dl/dl_max;
@@ -857,7 +857,7 @@ void Cell::s_get_cross_feeding_signal_from_list(std::list<std::string> ls)
     coords[2] = x_length;
     coords[3] = y_length;
     float signal_level = world->handler->getSignalValue(signal_id, coords, "exact");
-    float growth_rate = get_param( "ecoli_growth_rate_max" );
+    float growth_rate = get_param( "ecoli_growth_rate" );
 
     if(signal_level != -1)
     {

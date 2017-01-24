@@ -286,14 +286,20 @@ void GenCell::deactivate(){
 }
 
 void GenCell::erase(){
-	if(!this->isFree()){
-		this->setFree();
-		if(this->state == 1){
-			if (this->environment_plasmid != NULL){
-				this->environment_plasmid->getOperon((unsigned int)0)->insertGens(this);
-			}
-		}
-	}
+    if(!this->isFree()){
+        this->setFree();
+        if(this->state == 1){
+            if (this->environment_plasmid != NULL){
+                if(this->environment_plasmid->getOperon((unsigned int)0) == NULL)
+                {
+                    GenPromoter *prom_basura = new GenPromoter("basura",-1);
+                    GenOperon *basura = new GenOperon("basura",prom_basura);
+                    this->environment_plasmid->insertOperon(basura);
+                }
+                this->environment_plasmid->getOperon((unsigned int)0)->insertGens(this);
+            }
+        }
+    }
 	int auxindex = this->parent->getPos(this);
 	if (this->parent != NULL && auxindex>=0){
 		this->parent->getGens()->erase(this->parent->getGens()->begin()+auxindex);

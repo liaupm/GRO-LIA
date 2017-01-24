@@ -119,15 +119,15 @@ void EColi::render ( Theme * theme, GroPainter * painter ) {
 
   QColor col;
 
-  /*col.setRgbF( qMin(1.0,rfp + yfp),
+  col.setRgbF( qMin(1.0,rfp + yfp),
                qMin(1.0,gfp + yfp + cfp),
                qMin(1.0,cfp),
-               0.75);*/
+               0.75);
 
-  col.setRgbF( qMin(1.0,rfp),
+  /*col.setRgbF( qMin(1.0,rfp),
                qMin(1.0,gfp),
                qMin(1.0,cfp),
-               0.75);
+               0.75);*/
 
   /*painter->setBrush(col);
 

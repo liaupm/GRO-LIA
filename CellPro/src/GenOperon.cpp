@@ -682,7 +682,7 @@ void GenOperon::erase(){
     }
     int auxindex=this->parent->getPos(this);
     if (this->parent != NULL && auxindex >=0 ){
-       this->parent->getOperons()->erase(this->parent->getOperons()->begin()+auxindex);
+       this->parent->getOperons()->erase(this->parent->getOperons()->begin()+auxindex-1);
     }
     delete this;
 }

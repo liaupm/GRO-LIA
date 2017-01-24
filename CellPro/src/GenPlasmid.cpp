@@ -1624,7 +1624,7 @@ void GenPlasmid::erase(){
     }
     int auxindex=this->parent->getPos(this);
     if (this->parent != NULL && auxindex >=0 ){
-       this->parent->getPlasmids()->erase(this->parent->getPlasmids()->begin()+auxindex);
+       this->parent->getPlasmids()->erase(this->parent->getPlasmids()->begin()+auxindex-1);
     }
     delete this;
 }
