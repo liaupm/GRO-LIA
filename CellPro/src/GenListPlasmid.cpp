@@ -867,69 +867,70 @@ GenPlasmid* GenListPlasmid::getEnvPlasmid()
 	GenPlasmid *Plas_env = new GenPlasmid("0","Plas_env");
 	GenListPlasmid *plasmidlist =new GenListPlasmid("listP", Plas_env);
 	//plasmido
-	GenPlasmid *p = new GenPlasmid("1","Plas",plasmidlist,Plas_env);
+    GenPlasmid *p = new GenPlasmid("1","Plas0",plasmidlist,Plas_env);
     //promotores
-	GenPromoter *prom0 = new GenPromoter("prom",1);//true
-	GenPromoter *prom1 = new GenPromoter("prom",3);//not1
-	GenPromoter *prom3 = new GenPromoter("prom",3);//not2
-	GenPromoter *prom2 = new GenPromoter("prom",5);//or
-	GenPromoter *prom = new GenPromoter("prom",3);//default
+    GenPromoter *prom0 = new GenPromoter("prom0",3);//not
+    GenPromoter *prom1 = new GenPromoter("prom1",1);//true
+    GenPromoter *prom2 = new GenPromoter("prom2",3);//not2
+    GenPromoter *prom3 = new GenPromoter("prom3",5);//or
 	//operon
-    GenOperon *o=new GenOperon("1","operon",p,Plas_env,prom);
-	
-    
+    GenOperon *o;
+    GenOperon *o0=new GenOperon("0","operonPx1",p,Plas_env,prom0);
+    GenOperon *o1=new GenOperon("1","operonPs0",p,Plas_env,prom1);
+    GenOperon *o2=new GenOperon("2","operonPx2",p,Plas_env,prom2);
+    GenOperon *o3=new GenOperon("3","operonPx3",p,Plas_env,prom3);
+
 	//proteinas
-    GenCell *pt1 = new GenCell("Prot1",0,0,40.0f,20.0f);
-    GenCell *pt2 = new GenCell("Prot2",0,0,61.0f,20.3f);
-    GenCell *pt3 = new GenCell("Prot3",0,0,20.0f,20.0f);
-	GenCell *pt4 = new GenCell("Prot4",0,0,10.0f,20.0f);
-	GenCell *pt5 = new GenCell("Prot5",0,0,0.1f,0.1f);
-    //Creacion de la estructura
-    
-    
-    p->insertOperon(o);
-	p->insertOperon(o);
-	p->insertOperon(o);
-	p->insertOperon(o);
-	p->insertOperon(o);
+    GenCell *pt0 = new GenCell("rapx",0,0,5.1f,33.1f);
+    GenCell *pt1 = new GenCell("tet",0,0,50.1f,330.1f);
+    GenCell *pt2 = new GenCell("lac",0,0,5.0f,33.1f);
+    GenCell *pt3 = new GenCell("ara",0,0,10.0f,33.1f);
+
+    //Creacion de la estructura  
+    p->insertOperon(o0);
+    p->insertOperon(o1);
+    p->insertOperon(o2);
+    p->insertOperon(o3);
    
 	plasmidlist->insertPlasmid(p);
    
 	//Logica de las puertas
-	std::vector<GenCell*> TA1;std::vector<GenCell*> TA2;std::vector<GenCell*> TA3;std::vector<GenCell*> TA4;
-	TA1.push_back(pt1);//not1
-	TA2.push_back(pt2);//not2
-	TA3.push_back(pt4);//rep or 
-	TA4.push_back(pt3);//act or
-	prom1->setListTD(TA1);
-	prom3->setListTD(TA2);
-	prom2->setListTD(TA3);prom2->setListTA(TA4);
+    std::vector<GenCell*> TA1;
+    std::vector<GenCell*> TA3;
+    std::vector<GenCell*> TA4;
+
+
+    TA1.push_back(pt3);//not1
+    TA3.push_back(pt1);//rep or
+    TA4.push_back(pt0);//act or
+    TA4.push_back(pt2);
+
+
+    prom0->setListTD(TA1);
+    prom2->setListTD(TA3);
+    prom3->setListTA(TA4);
 	
 	
 	
 	//Relacion promotor Operon---SE NECESITAN LOS PUNTEROS REALES DEL SISTEMA
 	unsigned int k =0;
 	
-	
 	GenPlasmid* pp1=plasmidlist->getPlasmid(k);
 	GenOperon* pp1o0=pp1->getOperon(k);
 	GenOperon* pp1o1=pp1->getOperon(1);
 	GenOperon* pp1o2=pp1->getOperon(2);
 	GenOperon* pp1o3=pp1->getOperon(3);
-	GenOperon* pp1o4=pp1->getOperon(4);
 	
-	pp1o0->insertGens(pt1);
-	pp1o1->insertGens(pt2);
-	pp1o2->insertGens(pt3);
-	pp1o3->insertGens(pt4);
-	pp1o4->insertGens(pt5);
+    pp1o0->insertGens(pt0);
+    pp1o1->insertGens(pt1);
+    pp1o2->insertGens(pt2);
+    pp1o3->insertGens(pt3);
 	
 	//seteo de los promotores sobre el operon
 	pp1o0->setPromoter(prom0);
-	pp1o1->setPromoter(prom0);
-	pp1o2->setPromoter(prom1);
-	pp1o3->setPromoter(prom3);
-	pp1o4->setPromoter(prom2);
+    pp1o1->setPromoter(prom1);
+    pp1o2->setPromoter(prom2);
+    pp1o3->setPromoter(prom3);
 	
 	//seteo promotor operon
 	prom0->setListPlasmid(plasmidlist);//relacion puertas operon
@@ -939,38 +940,56 @@ GenPlasmid* GenListPlasmid::getEnvPlasmid()
 	
 	
 	//PROTEINA, ACTIVAREMOS A DEDO
-	GenCell* pp1o1PT1=pp1o1->getGen(k);GenCell* pp1o1PT2=pp1o1->getGen(1);GenCell* pp1o1PT3=pp1o1->getGen(2);
-	GenCell* pp1o2PT1=pp1o2->getGen(k);GenCell* pp1o2PT2=pp1o2->getGen(1);GenCell* pp1o2PT3=pp1o2->getGen(2);
-	GenCell* pp2o1PT1=pp2o1->getGen(k);GenCell* pp2o1PT2=pp2o1->getGen(1);GenCell* pp2o1PT3=pp2o1->getGen(2);
-	GenCell* pp2o2PT1=pp2o2->getGen(k);GenCell* pp2o2PT2=pp2o2->getGen(1);GenCell* pp2o2PT3=pp2o2->getGen(2);
-	GenCell* pp3o1PT1=pp3o1->getGen(k);GenCell* pp3o1PT2=pp3o1->getGen(1);GenCell* pp3o1PT3=pp3o1->getGen(2);
-	GenCell* pp3o2PT1=pp3o2->getGen(k);GenCell* pp3o2PT2=pp3o2->getGen(1);GenCell* pp3o2PT3=pp3o2->getGen(2);
+    GenCell* pp1o0PT1 = pp1o0->getGen((unsigned int)0);
+    GenCell* pp1o1PT1=pp1o1->getGen((unsigned int)0);
+    GenCell* pp1o2PT1=pp1o2->getGen((unsigned int)0);
+    GenCell* pp1o3PT1=pp1o3->getGen((unsigned int)0);
 	
 	
 	//ACTIVACION
-	//pp1o1PT1->activate();
+    //pp1o1PT1->activate();
 	//pp3o1PT2->activate();
+
+
+    float times[50];
+    times[0] = 5.0;
+    times[1] = 10.0;
+    times[2] = 43.0;
+    times[3] = 50.0;
+    times[4] = 83.0;
+    times[5] = 116.0;
+    times[6] = 121.0;
 	
 	
-	
-    std::cout << "ListPlasmids => Id: " << plasmidlist -> getId() << "; Size: " << plasmidlist->getSize() << '\n';
-    for (unsigned int k = 0; k < plasmidlist->getSize(); k++) {
-        p = plasmidlist->getPlasmid(k);
-        std::cout << "Plasmid => Id: " << p -> getId() << "; Name: " << p->getName() <<"; Size: " << p->getSize() << "; Free: " << p->isFree() << '\n';
-        for (unsigned int j = 0; j < p->getSize(); j++) {
-            o = p -> getOperon(j);
-            std::cout << "\tOperon => Id: " << o -> getId() << "; Name: " << o->getName() <<"; Size: " << o->getSize() << "; Gate: " << o->getPromoter()->getGate() << '\n';
-            for (unsigned int i = 0; i < o->getSize(); i++) {
-				 o->getGen(i)->setRNG(rng);
-                std::cout << "\t\tGen (" << o->getGen(i)->getName() << ") => Type: " <<o->getGen(i)->getType() << " => State: " <<o->getGen(i)->getState() << " => TimeDeg: " <<o->getGen(i)->getTimeDeg()<< " => TimeAct: " <<o->getGen(i)->getTimeAct() << " => TIME: " << o->getGen(i)->getTime() << '\n';
+    int index = 0;
+
+    for (float i=0;i<150;i=i+0.1){
+        if((index <= 6 && (i >= times[index] - 0.1 && i <= times[index] + 0.4)) || i == 0)
+        {
+            std::cout<< "------------TIME: " << i << " ---------------" << endl;
+            std::cout << "ListPlasmids => Id: " << plasmidlist -> getId() << "; Size: " << plasmidlist->getSize() << '\n';
+            for (unsigned int k = 0; k < plasmidlist->getSize(); k++) {
+                p = plasmidlist->getPlasmid(k);
+                std::cout << "Plasmid => Id: " << p -> getId() << "; Name: " << p->getName() <<"; Size: " << p->getSize() << "; Free: " << p->isFree() << '\n';
+                for (unsigned int j = 0; j < p->getSize(); j++) {
+                    o = p -> getOperon(j);
+                    std::cout << "\tOperon => Id: " << o -> getId() << "; Name: " << o->getName() <<"; Size: " << o->getSize() << "; Gate: " << o->getPromoter()->getGate() << '\n';
+                    for (unsigned int l = 0; l < o->getSize(); l++) {
+                         o->getGen(l)->setRNG(rng);
+                        std::cout << "\t\tGen (" << o->getGen(l)->getName() << ") => Type: " <<o->getGen(l)->getType() << " => State: " <<o->getGen(l)->getState() << " => TimeDeg: " <<o->getGen(l)->getTimeDeg()<< " => TimeAct: " <<o->getGen(l)->getTimeAct() << " => TIME: " << o->getGen(l)->getTime() << '\n';
+                    }
+                }
             }
+            std::cout<< "---------------------------" << endl;
         }
+        if(i > times[index] + 0.4)
+        {
+            index++;
+        }
+
+        plasmidlist->macroPlasmid(i);
+
     }
-	
-	for (float i=0;i<100;i=i+0.1){
-		
-		plasmidlist->macroPlasmid(i);
-	}
 }*/
 
 

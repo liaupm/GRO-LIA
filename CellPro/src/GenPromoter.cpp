@@ -102,7 +102,7 @@ int GenPromoter::and_gate(){
 }
 
 int GenPromoter::or_gate(){
-    if((itsInMapOne(this->TA))|| !itsInMapOne(this->TD) ){
+    if((itsInMapOne(this->TA))|| (!itsInMapOne(this->TD) && TD.size > 0) ){
 	   return 1;
     }
 	return 0;
