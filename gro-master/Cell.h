@@ -24,7 +24,7 @@
 //#include "chipmunk_unsafe.h"
 #include "CellEngine.h"
 #include "CellNutrient.h"
-#include "GenListPlasmid.h"
+#include "cg/Genome.hpp"
 #include "ccl.h"
 #include "Defines.h"
 #include "Utility.h"
@@ -142,12 +142,6 @@ class Cell {
   void set_conjugated_indicator ( int, bool );
   bool get_conjugated_indicator ( int ) const;*/
 
-  inline GenListPlasmid* getPlasmidList ( void ) { return plasmidList; }
-  inline void setPlasmidList (GenListPlasmid* l) { this->plasmidList = l; }
-
-  inline GenPlasmid* getEnvPlasmid ( void ) { return plasEnv; }
-  inline void setEnvPlasmid (GenPlasmid* env) { this->plasEnv = env; }
-
   inline float get_d_vol ( void ) { return d_vol; }
   inline float get_available( void ) { return my_available; }
 
@@ -182,8 +176,10 @@ class Cell {
   /*void set_analog_molecule(int i, int val) {analog_molecules_list[i]=val;}
   bool get_analog_molecule(int i) {return analog_molecules_list[i];}*/
 
-  int check_gen_condition(std::vector<std::pair<std::string, int>>);
+  int check_gen_condition(std::vector<uint64_t>);
   int check_plasmid_condition(std::vector<std::pair<std::string, int>>);
+
+  inline cg::Genome& getGenome(void) {return genome;}
 
   //bool can_express_protein(int i); <-- OJO: tiene que ver con las señales que son necesarias para inhibir o expresar una proteina ej: IPTG vs LacI.
 
@@ -197,13 +193,13 @@ class Cell {
   void paint_from_list(std::list<std::string> ls);
   void conjugate_from_list(std::list<std::string> ls);
   void conjugate_directed_from_list(std::list<std::string> ls);
-  void lose_plasmid_from_list(std::list<string> ls);
-  void set_eex_from_list(std::list<string> ls);
-  void remove_eex_from_list(std::list<string> ls);
-  void die_from_list(std::list<string> ls);//{this->mark_for_death();}
+  void lose_plasmid_from_list(std::list<std::string> ls);
+  void set_eex_from_list(std::list<std::string> ls);
+  void remove_eex_from_list(std::list<std::string> ls);
+  void die_from_list(std::list<std::string> ls);//{this->mark_for_death();}
   //void die_from_list();
   void conj_and_paint_from_list(std::list<std::string> ls);
-  void delta_paint_from_list(std::list<string> ls);
+  void delta_paint_from_list(std::list<std::string> ls);
   void change_gt_from_list(std::list<std::string> ls);
   void emit_cross_feeding_signal_from_list(std::list<std::string> ls);
   void get_cross_feeding_signal_from_list(std::list<std::string> ls);
@@ -226,9 +222,32 @@ class Cell {
   //HACER UNA ACCION QUE REPRIMA POR SEÑAL... Es parecida a s_absorb_QS o s_get_QS, pero que toma un gen como parametro y lo reprime o activa.
 
 
-  void state_to_file(FILE *fp);
+  void state_to_file(FILE *fp, std::vector<std::string>);
+  void state_to_file_reduced(FILE *fp, std::vector<std::string>);
+
+  inline void add_eex(std::string name)
+  {
+      const cg::Plasmid* to_eex= genome.getPlasmidPool()->getPlasmidByName(name);
+
+      if(to_eex != nullptr)
+      {
+            excluded.insert(std::make_pair(to_eex->getName(), to_eex));
+      }
+  }
+
+  inline void remove_eex(std::string name)
+  {
+      excluded.erase(name);
+  }
+
+  inline bool is_eex(std::string name)
+  {
+      return(excluded.find(name) != excluded.end());
+  }
 
  protected:
+
+  Cell(World* w, cg::Genome& g, bool mut);
 
   ceSpace * space;
   ceBody * body;
@@ -250,8 +269,9 @@ class Cell {
   int num_analog_molecules;
   int n_prots;
 
-  GenListPlasmid *plasmidList;
-  GenPlasmid *plasEnv;
+  cg::Genome genome;
+
+  std::map<std::string, const cg::Plasmid*> excluded;
 
   /*int num_analog_molecules;*/
 

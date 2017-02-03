@@ -34,7 +34,7 @@
 
 static int max_id = 0;
 
-Cell::Cell ( World * w ) : world ( w ), gro_program(NULL), marked(false), selected(false) {
+Cell::Cell ( World * w ) : world ( w ), gro_program(NULL), marked(false), selected(false), genome(w->getPlasmidPool()) {
 
   parameters = w->get_param_map();
   compute_parameter_derivatives();
@@ -51,9 +51,6 @@ Cell::Cell ( World * w ) : world ( w ), gro_program(NULL), marked(false), select
   divided = false;
   daughter = false;
 
-  plasEnv = new GenPlasmid("0","Plas_env");
-  plasmidList = new GenListPlasmid("listP", plasEnv);
-
   cross_input_coefficient = 1.0;
   cross_output_coefficient = 1.0;
 
@@ -63,11 +60,34 @@ Cell::Cell ( World * w ) : world ( w ), gro_program(NULL), marked(false), select
 
 }
 
+Cell::Cell(World* w, cg::Genome& g, bool mut) : world (w), genome(g, mut), gro_program(NULL), marked(false), selected(false)
+{
+    parameters = w->get_param_map();
+    compute_parameter_derivatives();
+    w->init_actions_map();
+
+    program = w->get_program();
+    space = w->get_space();
+    body = NULL;
+
+    int i;
+    for ( i=0; i<MAX_STATE_NUM; i++ ) q[i] = 0;
+    for ( i=0; i<MAX_REP_NUM; i++ ) rep[i] = 0;
+
+    divided = false;
+    daughter = false;
+
+    cross_input_coefficient = 1.0;
+    cross_output_coefficient = 1.0;
+
+    n_prots = 0;
+
+    set_id ( max_id++ );
+}
+
 Cell::~Cell ( void ) {
 
-  delete plasmidList;
-  delete plasEnv;
-
+  ceDestroyBody(get_body());
   if ( gro_program != NULL ) {
     delete gro_program;
   }
@@ -99,73 +119,58 @@ void Cell::conjugate(std::string name, double n_conj, int mode)
     int seen = 0;
     double dete = world->get_sim_dt();
     ceBody** neighbors = ceGetNearBodies(this->body,0.5,&size);
-    std::vector<GenPlasmid*>* found = this->plasmidList->getPlasmidByName(name);
-    GenPlasmid* toConj = NULL;
 
-    if(found->size() == 1)
+    const cg::Plasmid* toConj;
+    const std::vector<const cg::Plasmid*>& plasmids = genome.getPlasmids();
+
+    for(auto it : plasmids)
     {
-        toConj = found->at(0);
+        if(it->getName() == name)
+        {
+            toConj = it;
 
-        if(size < nc)
-        {
-            p = ((n_conj * dete)/(this->gt_inst))*((double)((double)size/(double)nc));
-        }
-        else
-        {
-            p = ((n_conj * dete)/(this->gt_inst));
-        }
-        if(r < p && mode == UNDIRECTED)
-        {
-            target = rand()%size;
-            if(!(((Cell*)(neighbors[target]->data))->marked_for_death()) &&
-                    !(this->marked_for_death()) &&
-                    !((Cell*)(neighbors[target]->data))->getPlasmidList()->isAvoidPlasmid(toConj))
+            if(size < nc)
             {
-                ((Cell*)(neighbors[target]->data))->getPlasmidList()->insertPlasmidConj(toConj);
-                toConj = ((Cell*)(neighbors[target]->data))->getPlasmidList()->getPlasmid(((Cell*)(neighbors[target]->data))->getPlasmidList()->getSize()-1);
-                toConj->setParent(((Cell*)(neighbors[target]->data))->getPlasmidList());
-                toConj->setEnvPlasmid(((Cell*)(neighbors[target]->data))->getPlasmidList()->getEnvPlasmid());
-                toConj->setType(true);
-                toConj->setRNG(world->getRNG());
-                for(auto ops : *(toConj->getOperons()))
-                {
-                    ops->getPromoter()->setListPlasmid(((Cell*)(neighbors[target]->data))->getPlasmidList());
-                    ops->setNoise(world->get_time(), world->get_sim_dt());
-                }
+                p = ((n_conj * dete)/(this->gt_inst))*((double)((double)size/(double)nc));
             }
-            free(neighbors);
-        }
-
-        else if(r < p && mode == DIRECTED)
-        {
-            target = rand() % size;
-            seen++;
-            while((
-                      !(((Cell*)(neighbors[target]->data))->marked_for_death()) &&
-                      !(this->marked_for_death()) && toConj != NULL &&
-                      (((Cell*)(neighbors[target]->data))->getPlasmidList()->isAvoidPlasmid(toConj))) &&
-                      seen < size)
+            else
             {
-                target = (target + 1) % size;
+                p = ((n_conj * dete)/(this->gt_inst));
+            }
+            if(r < p && mode == UNDIRECTED)
+            {
+                target = rand()%size;
+                if(!(((Cell*)(neighbors[target]->data))->marked_for_death()) &&
+                        !(this->marked_for_death()) &&
+                        !((Cell*)(neighbors[target]->data))->is_eex(name))
+                {
+                    ((Cell*)(neighbors[target]->data))->getGenome().add(toConj);
+                }
+                free(neighbors);
+            }
+
+            else if(r < p && mode == DIRECTED)
+            {
+                target = rand() % size;
                 seen++;
-            }
-            if(!(((Cell*)(neighbors[target]->data))->marked_for_death()) &&
-                    !(this->marked_for_death()) && toConj != NULL &&
-                    !(((Cell*)(neighbors[target]->data))->getPlasmidList()->isAvoidPlasmid(toConj)))
-            {
-                ((Cell*)(neighbors[target]->data))->getPlasmidList()->insertPlasmidConj(toConj);
-                toConj = ((Cell*)(neighbors[target]->data))->getPlasmidList()->getPlasmid(((Cell*)(neighbors[target]->data))->getPlasmidList()->getSize()-1);
-                toConj->setParent(((Cell*)(neighbors[target]->data))->getPlasmidList());
-                toConj->setEnvPlasmid(((Cell*)(neighbors[target]->data))->getPlasmidList()->getEnvPlasmid());
-                toConj->setType(true);
-                toConj->setRNG(world->getRNG());
-                for(auto ops : *(toConj->getOperons()))
+                while((
+                          !(((Cell*)(neighbors[target]->data))->marked_for_death()) &&
+                          !(this->marked_for_death()) && toConj != NULL &&
+                          (((Cell*)(neighbors[target]->data))->is_eex(name))) &&
+                          seen < size)
                 {
-                    ops->getPromoter()->setListPlasmid(((Cell*)(neighbors[target]->data))->getPlasmidList());
-                    ops->setNoise(world->get_time(), world->get_sim_dt());
+                    target = (target + 1) % size;
+                    seen++;
                 }
+                if(!(((Cell*)(neighbors[target]->data))->marked_for_death()) &&
+                        !(this->marked_for_death()) && toConj != NULL &&
+                        !(((Cell*)(neighbors[target]->data))->is_eex(name)))
+                {
+                    ((Cell*)(neighbors[target]->data))->getGenome().add(toConj);
+                }
+                free(neighbors);
             }
-            free(neighbors);
+            return;
         }
     }
 }
@@ -213,51 +218,24 @@ float Cell::area_concentration(int signal_id, float d_in_microns)
 
 void Cell::check_action()
 {
-    bool result = true;
-    int num_actions = world->get_num_actions();
-    std::map<std::string, int> action_prots;
-    std::map<std::string, int> temp1;
-    std::map<std::string, int> temp2;
-    bool t1 = false, t2 = false, t3 = false;
+    std::vector<uint64_t> action_proteins;
+    uint64_t cell_proteins = genome.getProteins();
+    uint64_t cond = 0, cell = 0;
 
-    for(int row=0;row<num_actions;++row){
-        result = true;
-        action_prots = world->get_action_prot(row);
-        if(!action_prots.empty())
+    for(int row = 0; row < world->get_num_actions(); ++row)
+    {
+        action_proteins = world->get_action_prot(row);
+        cond = action_proteins.at(0) & action_proteins.at(1);
+        cell = action_proteins.at(0) & cell_proteins;
+
+        if(cond == cell)
         {
-            for(auto ent1 = action_prots.begin(); (ent1 != action_prots.end() && result); ++ent1)
-            {
-                temp1 = this->getPlasmidList()->isGenActive(ent1->first);
-                temp2 = this->getPlasmidList()->isGenDeactive(ent1->first);
-                t1 = temp1.empty();
-                t2 = temp2.empty();
-                t3 = this->getPlasmidList()->isGenExist(ent1->first).empty();
-
-                if(!t1 && ent1->second == -1)
-                {
-                    result = false;
-                }
-                else if(!t2 && ent1->second == 1)
-                {
-                    result = false;
-                }
-                else if(t1 && ent1->second == 1)
-                {
-                    result = false;
-                }
-                else if(t3 && ent1->second == 1)
-                {
-                    result = false;
-                }
-            }
-        }
-
-        if(result){
             FnPointer fp = world->get_action(world->get_action_name(row));
             std::list<std::string> pl = world->get_action_param(row);
             ((*this).*fp)(pl);
         }
     }
+    //world->randomize_actions();
 }
 
 void Cell::paint_from_list(std::list<string> ls){
@@ -325,27 +303,15 @@ void Cell::delta_paint_from_list(std::list<string> ls){
 void Cell::set_eex_from_list(std::list<string> ls)
 {
     std::list<std::string>::iterator i = ls.begin();
-    std::vector<GenPlasmid*>* plasmids;
     std::string plasmid_to_eex ((*i).c_str());
-
-    plasmids = world->get_globalPlasmidList()->getPlasmidByName(plasmid_to_eex);
-    if(plasmids->size() > 0 && !this->getPlasmidList()->isAvoidPlasmid(plasmids->at(0)))
-    {
-        this->getPlasmidList()->insertAvoidPlasmid(plasmids->at(0));
-    }
+    add_eex(plasmid_to_eex);
 }
 
 void Cell::remove_eex_from_list(std::list<string> ls)
 {
     std::list<std::string>::iterator i = ls.begin();
-    std::vector<GenPlasmid*>* plasmids;
     std::string plasmid_to_eex ((*i).c_str());
-
-    plasmids = world->get_globalPlasmidList()->getPlasmidByName(plasmid_to_eex);
-    if(plasmids->size() > 0)
-    {
-        this->getPlasmidList()->eraseAvoidPlasmid(plasmids->at(0));
-    }
+    remove_eex(plasmid_to_eex);
 }
 
 void Cell::conjugate_from_list(std::list<std::string> ls){
@@ -369,7 +335,16 @@ void Cell::conjugate_directed_from_list(std::list<std::string> ls){
 void Cell::lose_plasmid_from_list(std::list<std::string> ls){
     std::list<std::string>::iterator i = ls.begin();
     std::string name ((*i).c_str());
-    this->plasmidList->erasePlasmidByName(name);
+    const std::vector<const cg::Plasmid*>& plasmids = genome.getPlasmids();
+
+    for(auto it : plasmids)
+    {
+        if(it->getName() == name)
+        {
+            genome.remove(it);
+            return;
+        }
+    }
 }
 
 void Cell::die_from_list(std::list<std::string> ls){
@@ -631,15 +606,15 @@ void Cell::s_absorb_QS(std::list<std::string> ls)
     coords[3] = y_length;
 
     double sig_val;
-    std::map<std::string, int> plasmids;
+    /*std::map<std::string, int> plasmids;
     std::map<std::string, int> operons;
-    bool has_noise = false;
+    bool has_noise = false;*/
 
-    plasmids = this->getPlasmidList()->isGenExist(protein);
+    //plasmids = this->getPlasmidList()->isGenExist(protein);
 
     sig_val =  world->handler->getSignalValue(signal_id,coords,"exact");
 
-    if(!(plasmids.empty()))
+    /*if(!(plasmids.empty()))
     {
         for(auto pl : plasmids)
         {
@@ -655,15 +630,19 @@ void Cell::s_absorb_QS(std::list<std::string> ls)
 
         if(!has_noise)
         {
-            if(((compsign.compare(lt) == 0 && sig_val < threshold) || (compsign.compare(lt) != 0 && sig_val >= threshold)))
-            {
-                this->getPlasmidList()->activateGen(protein);
-            }
-            else
-            {
-                this->getPlasmidList()->deactivateGen(protein);
-            }
+
         }
+    }*/
+
+    if(((compsign.compare(lt) == 0 && sig_val < threshold) || (compsign.compare(lt) != 0 && sig_val >= threshold)))
+    {
+        genome.setProteinState(genome.getPlasmidPool()->getProteinByName(protein),true);
+        //this->getPlasmidList()->activateGen(protein);
+    }
+    else
+    {
+        genome.setProteinState(genome.getPlasmidPool()->getProteinByName(protein),false);
+        //this->getPlasmidList()->deactivateGen(protein);
     }
 
     world->handler->absorb_signal(signal_id, threshold, coords, "exact");
@@ -690,15 +669,15 @@ void Cell::s_get_QS(std::list<std::string> ls)
     coords[3] = y_length;
 
     double sig_val;
-    std::map<std::string, int> plasmids;
+    /*std::map<std::string, int> plasmids;
     std::map<std::string, int> operons;
     bool has_noise = false;
 
-    plasmids = this->getPlasmidList()->isGenExist(protein);
+    plasmids = this->getPlasmidList()->isGenExist(protein);*/
 
     sig_val =  world->handler->getSignalValue(signal_id,coords,"exact");
 
-    if(!(plasmids.empty()))
+    /*if(!(plasmids.empty()))
     {
         for(auto pl : plasmids)
         {
@@ -714,15 +693,19 @@ void Cell::s_get_QS(std::list<std::string> ls)
 
         if(!has_noise)
         {
-            if(((compsign.compare(lt) == 0 && sig_val < threshold) || (compsign.compare(lt) != 0 && sig_val >= threshold)))
-            {
-                this->getPlasmidList()->activateGen(protein);
-            }
-            else
-            {
-                this->getPlasmidList()->deactivateGen(protein);
-            }
+
         }
+    }*/
+
+    if(((compsign.compare(lt) == 0 && sig_val < threshold) || (compsign.compare(lt) != 0 && sig_val >= threshold)))
+    {
+        genome.setProteinState(genome.getPlasmidPool()->getProteinByName(protein),true);
+        //this->getPlasmidList()->activateGen(protein);
+    }
+    else
+    {
+        genome.setProteinState(genome.getPlasmidPool()->getProteinByName(protein),false);
+        //this->getPlasmidList()->deactivateGen(protein);
     }
 }
 
@@ -959,38 +942,16 @@ void Cell::s_absorb_cross_feeding_signal_from_list(std::list<std::string> ls)
     }
 }
 
-int Cell::check_gen_condition(std::vector<std::pair<std::string, int>> cond)
+int Cell::check_gen_condition(std::vector<uint64_t> cond)
 {
     int result = 1;
     bool t = false;
+    uint64_t cell_proteins = genome.getProteins();
 
-    std::map<std::string,int> activeProteins, inactiveProteins;
-    activeProteins = this->plasmidList->getGensActive();
-    inactiveProteins = this->plasmidList->getGensDeactive();
-
-
-    for(auto it : cond)
+    if(cond.at(0) & cond.at(1) != cond.at(0) & cell_proteins)
     {
-        t = this->getPlasmidList()->isGenExist(it.first).empty();
-
-        if(activeProteins.find(it.first) != activeProteins.end() && it.second == -1)
-        {
-            result = 0;
-        }
-        else if(inactiveProteins.find(it.first) != inactiveProteins.end() && it.second == 1)
-        {
-            result = 0;
-        }
-        else if(activeProteins.find(it.first) == activeProteins.end() && it.second == 1)
-        {
-            result = 0;
-        }
-        else if(t && it.second == 1)
-        {
-            result = 0;
-        }
+        result = 0;
     }
-
     return result;
 }
 
@@ -998,16 +959,17 @@ int Cell::check_plasmid_condition(std::vector<std::pair<std::string, int>> cond)
 {
     int result = 1;
 
-    std::vector<GenPlasmid*>* plasmids;
+    const std::vector<const cg::Plasmid*> plasmids = genome.getPlasmids();
+    std::map<std::string,const cg::Plasmid*> temp;
+
+    for(auto it : plasmids)
+    {
+        temp.insert(std::pair<std::string,const cg::Plasmid*>(it->getName(),it));
+    }
 
     for(auto it : cond)
     {
-        plasmids = this->getPlasmidList()->getPlasmidByName(it.first);
-        if(!plasmids->empty() && it.second == -1)
-        {
-            result = 0;
-        }
-        if(plasmids->empty() && it.second == 1)
+        if((temp.find(it.first) == temp.end() && it.second == 1) || (temp.find(it.first) != temp.end() && it.second == -1))
         {
             result = 0;
         }
@@ -1015,36 +977,47 @@ int Cell::check_plasmid_condition(std::vector<std::pair<std::string, int>> cond)
     return result;
 }
 
-void Cell::state_to_file(FILE *fp)
+void Cell::state_to_file(FILE *fp, std::vector<std::string> prot_names)
 {
-    int i = 0;
     fprintf ( fp, "%f, %d, %f, %f, %f, %f, %f, %d, %d, %d, %d",
               this->world->get_time(),
               this->get_id(), this->get_x(), this->get_y(), this->get_theta(), this->get_volume(), this->get_gt_inst(),
               this->get_rep(GFP), this->get_rep(RFP), this->get_rep(YFP), this->get_rep(CFP));
 
-    std::map<std::string,int> activeProteins, inactiveProteins;
-    std::vector<std::pair<std::string, int>> allProteins;
-    int value = 0;
-    activeProteins = this->plasmidList->getGensActive();
-    inactiveProteins = this->plasmidList->getGensDeactive();
-
-    for(auto it : activeProteins)
+    for(auto it : prot_names)
     {
-        allProteins.push_back(std::make_pair(it.first,1));
+        if(genome.getProteins() & genome.getPlasmidPool()->getProteinByName(it)->getID())
+        {
+            fprintf(fp, ", 1");
+        }
+        else
+        {
+            fprintf(fp, ", 0");
+        }
     }
 
-    for(auto it : inactiveProteins)
-    {
-        allProteins.push_back(std::make_pair(it.first,0));
-    }
+    fprintf(fp, "\n");
 
-    std::sort(allProteins.begin(), allProteins.end());
+}
 
-    for(auto it : allProteins)
+void Cell::state_to_file_reduced(FILE *fp, std::vector<std::string> prot_names)
+{
+    fprintf ( fp, "%6.1f, %6.1f",
+              this->world->get_time(), this->get_x());
+
+    float uno = 1;
+    float cero = 0;
+
+    for(auto it : prot_names)
     {
-        value = it.second;
-        fprintf(fp, ", %d", value);
+        if(genome.getProteins() & genome.getPlasmidPool()->getProteinByName(it)->getID())
+        {
+            fprintf(fp, ", %6.0f",uno);
+        }
+        else
+        {
+            fprintf(fp, ", %6.0f", cero);
+        }
     }
 
     fprintf(fp, "\n");

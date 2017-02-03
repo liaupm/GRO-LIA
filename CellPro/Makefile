@@ -40,35 +40,23 @@ endif
 
 INCLUDE=include
 BUILD=build/$(OS_DIR)/$(MODE)
-SRC=src
 
-#CXXFLAGS = -m64
-#CFLAGS = -m64
-#LDFLAGS = -Wl,-m64,-arch,x86_64
 
-#CC = g++ -Wall -Wextra -O3 -c -I$(INCLUDE) -std=c++11
-#CC = g++ -Wall -Wextra -g -c -I$(INCLUDE) -std=c++11 #Debug
-#CC = g++ -Wall -Wextra -O3 -c -I$(INCLUDE)
-#CC = clang++ -std=c++11 -Wall -O3 -c -I$(INCLUDE) #release
+OBJECTS=$(BUILD)/Protein.o $(BUILD)/Gene.o $(BUILD)/Promoter.o $(BUILD)/Operon.o $(BUILD)/Plasmid.o $(BUILD)/PlasmidPool.o $(BUILD)/Genome.o
+
 AR = ar -rs
-#AR = x86_64-apple-darwin1X-ar -rs
 
+all:
+	$(CC) -c -o $(BUILD)/Protein.o src/cg/Protein.cpp
+	$(CC) -c -o $(BUILD)/Gene.o src/cg/Gene.cpp
+	$(CC) -c -o $(BUILD)/Promoter.o src/cg/Promoter.cpp
+	$(CC) -c -o $(BUILD)/Operon.o src/cg/Operon.cpp
+	$(CC) -c -o $(BUILD)/Plasmid.o src/cg/Plasmid.cpp
+	$(CC) -c -o $(BUILD)/PlasmidPool.o src/cg/PlasmidPool.cpp
+	$(CC) -c -o $(BUILD)/Genome.o src/cg/Genome.cpp
 
-OBJECTS=$(BUILD)/GenCell.o $(BUILD)/GenListPlasmid.o $(BUILD)/GenPlasmid.o $(BUILD)/GenOperon.o $(BUILD)/GenPromoter.o $(BUILD)/erreenege.o
-OUTPUT=$(BUILD)/libcellpro.a
-#OUTPUT=$(BUILD)/cellgene
-INCLUDES=$(INCLUDE)/GenCell.h $(INCLUDE)/GenListPlasmid.h $(INCLUDE)/GenPlasmid.h $(INCLUDE)/GenOperon.h $(INCLUDE)/GenPromoter.h $(INCLUDE)/erreenege.h
+	$(AR) $(BUILD)/libcellpro.a $(OBJECTS)
 
-all: $(OUTPUT)
-
-$(OUTPUT): $(OBJECTS)
-	$(AR) $(OUTPUT) $(OBJECTS)
-
-#$(OUTPUT): $(OBJECTS)
-#	$(CC) -o $(OUTPUT) $(OBJECTS)
-
-$(BUILD)/%.o: $(SRC)/%.cpp
-	$(CC) -c -o $@ $<
 
 .PHONY: clean
 

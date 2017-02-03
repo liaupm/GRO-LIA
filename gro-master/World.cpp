@@ -31,7 +31,7 @@ using namespace std;
 #ifdef NOGUI
 World::World ( void ) {
 #else
-World::World ( GroThread *ct ) : calling_thread ( ct ) {
+World::World ( GroThread *ct ) : calling_thread ( ct ) , plasmidCloud(std::random_device()()) {
 #endif
 
     prog = NULL;
@@ -56,6 +56,12 @@ World::World ( GroThread *ct ) : calling_thread ( ct ) {
     noprot = true;
     noaction = true;
 
+    proteins = new std::map<std::string, std::vector<float>>;
+    operons = new std::map<std::string, operon_data>;
+
+    output_started = false;
+    output_started2 = false;
+
     set_sim_dt ( DEFAULT_SIM_DT );
     set_chip_dt ( DEFAULT_CHIP_DT );
 
@@ -67,7 +73,7 @@ unsigned int cellLength = (MAX_LENGTH + MIN_LENGTH) * 0.5;
 
 World::~World ( void ) {
 
-    std::list<Cell *>::iterator j;
+    std::vector<Cell *>::iterator j;
 
     for ( j=population->begin(); j!=population->end(); j++ ) {
         delete (*j);
@@ -80,6 +86,10 @@ World::~World ( void ) {
 
     /*cpSpaceFreeChildren(space);
     cpSpaceFree(space);*/
+
+    delete proteins;
+    delete operons;
+
     ceDestroySpace(space);
     csDestroyGrid(signalGrid);
     delete population;
@@ -105,8 +115,8 @@ void World::init () {
     max_val = 0.0f;
 
     // Cells
-    population = new std::list<Cell *>; // deleted in ~World
-    std::list<Cell *>::iterator j;
+    population = new std::vector<Cell *>; // deleted in ~World
+    std::vector<Cell *>::iterator j;
 
     float *difdeg;
     difdeg = (float*)malloc(4*sizeof(float));
@@ -139,6 +149,7 @@ void World::init () {
 
         //Signals
         set_param ("signals", 1.0);
+        //set_param ("signals", 0.0);
         set_param ("signals_grid_length", 10);
         set_param ("signals_grid_cell_size", 5);
         set_param ("signals_grid_neighborhood", 8);
@@ -176,14 +187,6 @@ void World::init () {
     set_param ( "signal_grid_width", 800 );
     set_param ( "signal_grid_height", 800 );
     set_param ( "signal_element_size", 5 );*/
-
-    // Global plasmid list initialization
-    plasmidList = new GenListPlasmid("listP");
-    globalPlasmid = new GenPlasmid("global_plasmid");
-    globalPromoter = new GenPromoter("global_promoter",-1);
-    globalOperon = new GenOperon("global_operon",globalPromoter);
-    globalPlasmid->insertOperon(globalOperon);
-    plasmidList->insertPlasmid(globalPlasmid);
 
     this->num_actions = 0;
 
@@ -283,6 +286,7 @@ void World::init () {
         program_restarted = false;
     }
 
+    randomize_population();
 }
 
 void World::emit_message ( std::string str, bool clear ) {
@@ -295,16 +299,20 @@ void World::emit_message ( std::string str, bool clear ) {
 
 }
 
+void World::randomize_actions()
+{
+    std::random_shuffle(action_info.begin(), action_info.end());
+}
+
 void World::remove_all_actions()
 {
-    action_prot_list.clear();
-    action_param_list.clear();
-    action_names.clear();
+    action_info.clear();
+    map_actions.clear();
 }
 
 void World::restart ( void ) {
 
-    std::list<Cell *>::iterator j;
+    std::vector<Cell *>::iterator j;
 
     for ( j=population->begin(); j!=population->end(); j++ ) {
         delete (*j);
@@ -548,7 +556,7 @@ static void drawString ( GroPainter * painter, int x, int y, const char *str) {
 
 void World::render ( GroPainter * painter ) {
 
-    std::list<Cell *>::iterator j;
+    std::vector<Cell *>::iterator j;
     int dec = 0;
 
     theme.apply_background ( painter );
@@ -903,7 +911,7 @@ void World::update ( void ) {
 
     ceStep(space);
 
-    std::list<Cell *>::iterator j;
+    std::vector<Cell *>::iterator j;
     unsigned int n_bacteria = population->size();
     int index = 0, k=0, l=0; //m = 0;
     double s_conc = 0;
@@ -934,8 +942,9 @@ void World::update ( void ) {
 
     if ( population->size() < get_param ( "population_max" ) ) {
 
+        std::vector<Cell *> children;
         prog->world_update ( this );
-        std::list<Cell *>::iterator j;
+        std::vector<Cell *>::iterator j;
 
         // update each cell
         int indice = 0;
@@ -948,7 +957,7 @@ void World::update ( void ) {
 
             if(!noprot)
             {
-                (*j)->getPlasmidList()->macroPlasmid(this->t);
+                (*j)->getGenome().update(this->t, get_sim_dt());
             }
             if(!noaction)
             {
@@ -963,11 +972,13 @@ void World::update ( void ) {
             if(!(*j)->marked_for_death())
             {
                 Cell * d = (*j)->divide();
-                if ( d != NULL ) add_cell ( d );
+                if ( d != NULL ) children.push_back(d);
                 indice++;
             }
-
         }
+
+        for(unsigned int i = 0; i< children.size(); i++)
+            add_cell(children[i]);
 
         unsigned int i, J, k;
 
@@ -983,8 +994,9 @@ void World::update ( void ) {
         {
             if ( (*j)->marked_for_death() ) {
                 Cell * c = (*j);
-                ceDestroyBody(c->get_body());
-                j = population->erase ( j );
+                //ceDestroyBody(c->get_body());
+                *j = population->back();
+                population->pop_back();
                 delete c;
             }
             else
@@ -1041,7 +1053,10 @@ void World::update ( void ) {
 
     }
 
-    randomize_population();
+    std::random_shuffle ( population->begin(), population->end() );
+    //cout << "Pase!!! Ah espera... no, no toca eso: " << (*population)[0]->get_id() << endl;
+
+    //randomize_population();
 
 }
 
@@ -1083,7 +1098,7 @@ std::vector< std::vector<float> > * World::get_signal_matrix ( int i ) {
 
 void World::print ( void ) {
 
-    std::list<Cell *>::iterator j;
+    std::vector<Cell *>::iterator j;
     int i;
 
     for ( j=population->begin(); j!=population->end(); j++ ) {
@@ -1141,7 +1156,7 @@ int asd = 0;
 void World::histogram ( float x, float y, float width, float height, int channel ) {
 
     int max_freq;
-    std::list<Cell *>::iterator i;
+    std::vector<Cell *>::iterator i;
     int j;
     float val;
 
@@ -1210,7 +1225,7 @@ void World::histogram ( float x, float y, float width, float height, int channel
 void World::scatter ( float x, float y, float width, float height, int channel1, int channel2 ) {
 
     float max_val = 0.0;
-    std::list<Cell *>::iterator i;
+    std::vector<Cell *>::iterator i;
 
     for ( i=population->begin(); i!=population->end(); i++ ) {
         if ( (*i)->get_rep ( channel1 ) / (*i)->get_size() > max_val )
@@ -1251,9 +1266,9 @@ void World::randomize_population ( void )
 {
     if(population->size() >= 2)
     {
-        std::list<Cell *> * tmp_population;
-        std::list<Cell *>::iterator it;
-        tmp_population = new std::list<Cell *>;
+        std::vector<Cell *> * tmp_population;
+        std::vector<Cell *>::iterator it;
+        tmp_population = new std::vector<Cell *>;
 
         int n = population->size(), r=0;
 
@@ -1266,13 +1281,15 @@ void World::randomize_population ( void )
             population->erase(it);
             n--;
         }
+        //REVISAR
+        delete population;
         population = tmp_population;
     }
 }
 
 void World::select_cells ( int x1, int y1, int x2, int y2 ) {
 
-    std::list<Cell *>::iterator i;
+    std::vector<Cell *>::iterator i;
 
     int
             X1 = (1/zoom)*min ( x1, x2 ),
@@ -1290,7 +1307,7 @@ void World::select_cells ( int x1, int y1, int x2, int y2 ) {
 
 void World::deselect_all_cells ( void ) {
 
-    std::list<Cell *>::iterator i;
+    std::vector<Cell *>::iterator i;
 
     for ( i=population->begin(); i!=population->end(); i++ ) {
         (*i)->deselect();
@@ -1300,7 +1317,7 @@ void World::deselect_all_cells ( void ) {
 
 void World::select_random_cell ( void ) {
 
-    std::list<Cell *>::iterator i;
+    std::vector<Cell *>::iterator i;
     int whichOne = rand()%population->size();
     int j = 0;
 
@@ -1313,10 +1330,10 @@ void World::select_random_cell ( void ) {
 
 }
 
-int World::check_gen_cond_pop ( std::vector<std::pair<std::string, int>> cond ) {
+int World::check_gen_cond_pop ( std::vector<uint64_t> cond ) {
 
     int n = 0;
-    std::list<Cell *>::iterator i;
+    std::vector<Cell *>::iterator i;
     for ( i=population->begin(); i!=population->end(); i++ )
     {
         n += (*i)->check_gen_condition(cond);
@@ -1327,7 +1344,7 @@ int World::check_gen_cond_pop ( std::vector<std::pair<std::string, int>> cond ) 
 int World::check_plasmid_cond_pop ( std::vector<std::pair<std::string, int>> cond ) {
 
     int n = 0;
-    std::list<Cell *>::iterator i;
+    std::vector<Cell *>::iterator i;
     for ( i=population->begin(); i!=population->end(); i++ )
     {
         n += (*i)->check_plasmid_condition(cond);
@@ -1337,7 +1354,7 @@ int World::check_plasmid_cond_pop ( std::vector<std::pair<std::string, int>> con
 
 void World::dump ( FILE * fp ) {
 
-    std::list<Cell *>::iterator i;
+    std::vector<Cell *>::iterator i;
 
     fprintf ( fp, "id, x, y, theta, volume, gfp, rfp, yfp, cfp\n" );
 
@@ -1352,7 +1369,7 @@ void World::dump ( FILE * fp ) {
 float World::dump_left ( void ) {
 
     float min = 50000, x = 0;
-    std::list<Cell *>::iterator i;
+    std::vector<Cell *>::iterator i;
 
     for ( i=population->begin(); i!=population->end(); i++ ) {
         x = (*i)->get_x();
@@ -1367,7 +1384,7 @@ float World::dump_left ( void ) {
 float World::dump_right ( void ) {
 
     float max = -50000, x = 0;
-    std::list<Cell *>::iterator i;
+    std::vector<Cell *>::iterator i;
 
     for ( i=population->begin(); i!=population->end(); i++ ) {
         x = (*i)->get_x();
@@ -1383,7 +1400,7 @@ float World::dump_right ( void ) {
 float World::dump_top ( void ) {
 
     float min = 50000, y = 0;
-    std::list<Cell *>::iterator i;
+    std::vector<Cell *>::iterator i;
 
     for ( i=population->begin(); i!=population->end(); i++ ) {
         y = (*i)->get_y();
@@ -1398,7 +1415,7 @@ float World::dump_top ( void ) {
 float World::dump_bottom ( void ) {
 
     float max = -50000, y = 0;
-    std::list<Cell *>::iterator i;
+    std::vector<Cell *>::iterator i;
 
     for ( i=population->begin(); i!=population->end(); i++ ) {
         y = (*i)->get_y();

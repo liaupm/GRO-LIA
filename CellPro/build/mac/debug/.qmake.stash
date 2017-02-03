@@ -10,7 +10,7 @@ QMAKE_DEFAULT_LIBDIRS = \
     /lib \
     /usr/lib
 QMAKE_XCODE_DEVELOPER_PATH = /Applications/Xcode.app/Contents/Developer
-QMAKE_XCODE_VERSION = 8.2
+QMAKE_XCODE_VERSION = 8.2.1
 QMAKE_MAC_SDK.macosx.Path = /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.12.sdk
 QMAKE_MAC_SDK.macosx.PlatformPath = /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform
 QMAKE_MAC_SDK.macosx.SDKVersion = 10.12

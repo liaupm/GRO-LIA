@@ -24,6 +24,7 @@
 #include <vector>
 #include "Rands.h"
 #include <map>
+#include "cg/Operon.hpp"
 
 static gro_Program * current_gro_program = NULL;
 static Cell * current_cell = NULL;
@@ -96,17 +97,17 @@ Value * new_ecoli ( std::list<Value *> * args, Scope * s ) {
     std::list<Value *>::iterator i = args->begin();
     Value * settings = *i; i++;
 
-    ASSERT ( args->size() == 2 || args->size() == 5  );
+    ASSERT ( args->size() == 2 || args->size() == 3  );
 
     Value* Plas;
-    Value* Prot;
-    Value* mrna;
+    /*Value* Prot;
+    Value* mrna;*/
 
-    if(args->size() == 5)
+    if(args->size() == 3)
     {
-        Plas = *i; i++;
-        Prot = *i; i++;
-        mrna = *i;i++;
+        Plas = *i;
+        //Prot = *i; i++;
+        //mrna = *i;i++;
     }
 
     Program * prog = (*i)->program_value()->copy();
@@ -134,15 +135,14 @@ Value * new_ecoli ( std::list<Value *> * args, Scope * s ) {
 
     EColi * c = new EColi ( world, x, y, theta );
 
-    if(args->size() == 5)
+    if(args->size() == 3)
     {
         for ( i=Plas->list_value()->begin(); i != Plas->list_value()->end(); i++ )
         {
-            c->getPlasmidList()->insertPlasmid(world->get_globalPlasmidList()->getPlasmidById((*i)->string_value()));
-            c->getPlasmidList()->getPlasmidById((*i)->string_value())->setParent(c->getPlasmidList());
+            c->getGenome().add(world->getPlasmidPool()->getPlasmidByName((*i)->string_value()));
         }
 
-        for ( i=Prot->list_value()->begin(); i != Prot->list_value()->end(); i++ )
+        /*for ( i=Prot->list_value()->begin(); i != Prot->list_value()->end(); i++ )
         {
             std::map<std::string,int> plasHaveProt = c->getPlasmidList()->isGenExist((*i)->string_value());
             if(!plasHaveProt.empty())
@@ -163,9 +163,7 @@ Value * new_ecoli ( std::list<Value *> * args, Scope * s ) {
                     c->getPlasmidList()->getPlasmidById(ent1.first)->activateGen((*i)->string_value());
                 }
             }
-        }
-
-        c->getPlasmidList()->setEnvPlasmid(c->getEnvPlasmid());
+        }*/
     }
 
     current_cell = c;
@@ -186,7 +184,7 @@ Value * new_ecolis_random_circle ( std::list<Value *> * args, Scope * s ) {
     std::list<Value *>::iterator h;
     int j = 0;
 
-    ASSERT ( args->size() == 5 || args->size() == 8 );
+    ASSERT ( args->size() == 5 || args->size() == 6 );
 
     int n_ecoli = (*i)->int_value();
     i++;
@@ -198,17 +196,16 @@ Value * new_ecolis_random_circle ( std::list<Value *> * args, Scope * s ) {
     i++;
 
     Value* Plas;
-    Value* Prot;
-    Value* mrna;
+    /*Value* Prot;
+    Value* mrna;*/
 
-    std::vector<GenPlasmid*>* insert_plasmids;
-    GenPlasmid* plasmid_ref;
+    std::vector<cg::Plasmid*>* insert_plasmids;
 
-    if(args->size() == 8)
+    if(args->size() == 6)
     {
         Plas = *i; i++;
-        Prot = *i; i++;
-        mrna = *i; i++;
+        //Prot = *i; i++;
+        //mrna = *i; i++;
     }
 
     while(j < n_ecoli)
@@ -232,30 +229,14 @@ Value * new_ecolis_random_circle ( std::list<Value *> * args, Scope * s ) {
 
         EColi * c = new EColi ( world, x, y, theta );
 
-        if(args->size() == 8)
+        if(args->size() == 6)
         {
             for ( h=Plas->list_value()->begin(); h != Plas->list_value()->end(); h++ )
             {
-                insert_plasmids = world->get_globalPlasmidList()->getPlasmidByName((*h)->string_value());
-                if(insert_plasmids->size() == 1)
-                {
-                    c->getPlasmidList()->insertPlasmid((*h)->string_value(), insert_plasmids->at(0));
-                    plasmid_ref = c->getPlasmidList()->getPlasmid(c->getPlasmidList()->getSize()-1);
-                    plasmid_ref->setParent(c->getPlasmidList());
-                    for(auto ops : *(plasmid_ref->getOperons()))
-                    {
-                        ops->getPromoter()->setListPlasmid(c->getPlasmidList());
-                    }
-                    c->getPlasmidList()->setRNG(world->getRNG());
-                    for(auto ops : *(plasmid_ref->getOperons()))
-                    {
-                        // breakpoint (AGREGA STATE A DATA WATCH)
-                        ops->setNoise(world->get_time(), world->get_sim_dt());
-                    }
-                }
+                c->getGenome().add(world->getPlasmidPool()->getPlasmidByName((*h)->string_value()));
             }
 
-            for ( h=Prot->list_value()->begin(); h != Prot->list_value()->end(); h++ )
+            /*for ( h=Prot->list_value()->begin(); h != Prot->list_value()->end(); h++ )
             {
                 std::map<std::string,int> plasHaveProt = c->getPlasmidList()->isGenExist((*h)->string_value());
                 if(!plasHaveProt.empty())
@@ -276,9 +257,7 @@ Value * new_ecolis_random_circle ( std::list<Value *> * args, Scope * s ) {
                         c->getPlasmidList()->getPlasmidById(ent1.first)->activateGen((*h)->string_value());
                     }
                 }
-            }
-
-            c->getPlasmidList()->setEnvPlasmid(c->getEnvPlasmid());
+            }*/
         }
 
         current_cell = c;
@@ -291,7 +270,6 @@ Value * new_ecolis_random_circle ( std::list<Value *> * args, Scope * s ) {
     }
 
     return new Value(Value::UNIT);
-
 }
 
 /*
@@ -358,44 +336,56 @@ Value *new_operon (std::list<Value *> * args, Scope * s )
 
     ASSERT ( args->size() == 1);
 
-    int gate = 2;
-    int regulation_value = 0, counter = 0, which_riboswitch = 0;
+    cg::Promoter::Gate gate;
+    int counter = 0;
+    //int which_riboswitch = 0;
     std::list<Value *>::iterator i = args->begin();
     std::list<Value *>::iterator j,k,l;
     Value * data = *i;
     std::list<Value*> * proteins = NULL;
-    std::list<Value*> * rnas = NULL;
+    //std::list<Value*> * rnas = NULL;
     std::list<Value*> * transcription_factors = NULL;
-    std::list<Value*> * riboswitches = NULL;
-    std::list<Value*> * temp_riboswitch = NULL;
+    //std::list<Value*> * riboswitches = NULL;
+    //std::list<Value*> * temp_riboswitch = NULL;
     std::list<Value*> * protein_sigma = NULL;
     std::list<Value*> * protein_times = NULL;
-    std::list<Value*> * rna_sigma = NULL;
-    std::list<Value*> * rna_times = NULL;
+    //std::list<Value*> * rna_sigma = NULL;
+    //std::list<Value*> * rna_times = NULL;
     Value * promoter = NULL;
     Value* noise = NULL;
     float onNoise = 0.0;
     float offNoise = 0.0;
-    bool signal = false;
+    float noiseTime = 0.0;
 
     Value * proteinAtimes = NULL;
-    Value * rnaAtimes = NULL;
     Value * proteinDtimes = NULL;
-    Value * rnaDtimes = NULL;
-    std::string circuit;
-    std::string temp_tf;
-    std::string riboswitch_location_gene;
-    std::string operon_name;
-    map<std::string,int> riboMap;
+    //Value * rnaAtimes = NULL;
+    //Value * rnaDtimes = NULL;
 
-    GenOperon *op;
-    GenPromoter *prom = new GenPromoter("prom", 2);
+    std::string circuit;
+
+    std::string temp_tf;
+
+    std::string output_prot;
+    float act_time = 0;
+    float act_var_time = 0;
+    float deg_time = std::numeric_limits<float>::max();
+    float deg_var_time = 0;
+
+    float stored_deg_time = 0;
+
+    //std::string riboswitch_location_gene;
+    //map<std::string,int> riboMap;
+
+    std::string operon_name;
+    operon_data op_data;
+
 
     counter = 0;
     operon_name.clear();
     circuit.clear();
     temp_tf.clear();
-    riboswitch_location_gene.clear();
+    //riboswitch_location_gene.clear();
 
     if ( data->get_type() == Value::RECORD )
     {
@@ -403,24 +393,25 @@ Value *new_operon (std::list<Value *> * args, Scope * s )
         {
             operon_name = data->getField ( "name" )->string_value();
         }
-        if(operon_name.empty())
+        /*if(operon_name.empty())
         {
             int i = 0;
             i = (world->get_globalPlasmidList()->getPlasmidById("listPP0")->getSize());
             std::string base = "Operon";
             operon_name.assign(base);
             operon_name.append(std::to_string(i));
-        }
-        op = new GenOperon(operon_name,prom);
+        }*/
+
+        //operon_name
 
         if ( data->getField ( "proteins" ) && data->getField("proteins")->get_type() == Value::LIST)
         {
             proteins = data->getField ( "proteins" )->list_value();
         }
-        if ( data->getField ( "rnas" ) && data->getField("rnas")->get_type() == Value::LIST)
+        /*if ( data->getField ( "rnas" ) && data->getField("rnas")->get_type() == Value::LIST)
         {
             rnas = data->getField ( "rnas" )->list_value();
-        }
+        }*/
         if ( data->getField ( "promoter" ) && data->getField("promoter")->get_type() == Value::RECORD)
         {
             promoter = data->getField ( "promoter" );
@@ -431,99 +422,80 @@ Value *new_operon (std::list<Value *> * args, Scope * s )
                     circuit = promoter->getField( "function" )->string_value();
                     if(!circuit.empty())
                     {
-                        if(circuit.compare("FALSE") == 0 || circuit.compare("false") == 0)
+                        if(circuit.compare("TRUE") == 0 || circuit.compare("true") == 0)
                         {
-                            gate = -1;
+                            gate = cg::Promoter::Gate::OPEN;
                         }
-                        else if(circuit.compare("TRUE") == 0 || circuit.compare("true") == 0)
+                        else if(circuit.compare("FALSE") == 0 || circuit.compare("false") == 0)
                         {
-                            gate = 1;
-                        }
-                        else if(circuit.compare("YES") == 0 || circuit.compare("yes") == 0)
-                        {
-                            gate = 2;
-                        }
-                        else if(circuit.compare("NOT") == 0 || circuit.compare("not") == 0)
-                        {
-                            gate = 3;
+                            gate = cg::Promoter::Gate::CLOSED;
                         }
                         else if(circuit.compare("AND") == 0 || circuit.compare("and") == 0)
                         {
-                            gate = 4;
+                            gate = cg::Promoter::Gate::AND;
+                        }
+                        else if(circuit.compare("NAND") == 0 || circuit.compare("nand") == 0)
+                        {
+                            gate = cg::Promoter::Gate::NAND;
                         }
                         else if(circuit.compare("OR") == 0 || circuit.compare("or") == 0)
                         {
-                            gate = 5;
+                            gate = cg::Promoter::Gate::OR;
                         }
                         else if(circuit.compare("XOR") == 0 || circuit.compare("xor") == 0)
                         {
-                            gate = 6;
+                            gate = cg::Promoter::Gate::XOR;
                         }
-                        else if(circuit.compare("SIGNAL") == 0 || circuit.compare("signal") == 0)
+                        else if(circuit.compare("YES") == 0 || circuit.compare("yes") == 0)
                         {
-                            gate = 3;
-                            signal = true;
+                            gate = cg::Promoter::Gate::AND;
+                            //Mensaje de error!
+                        }
+                        else if(circuit.compare("NOT") == 0 || circuit.compare("not") == 0)
+                        {
+                            gate = cg::Promoter::Gate::NAND;
+                            //Mensaje de error!
                         }
                     }
-                    op->getPromoter()->setGate(gate);
-                }
-                if(!signal)
-                {
-                    if( promoter->getField( "transcription_factors" ) && promoter->getField( "transcription_factors" )->get_type() == Value::LIST)
-                    {
-                        transcription_factors = promoter->getField( "transcription_factors" )->list_value();
-                        if(transcription_factors != NULL)
-                        {
-                            std::vector<GenCell*> TD;
-                            std::vector<GenCell*> TA;
-                            j = transcription_factors->begin();
-                            do
-                            {
-                                temp_tf = (*j)->string_value();
-                                if(temp_tf.at(0) == '-')
-                                {
-                                    regulation_value = -1;
-                                    temp_tf.erase(temp_tf.begin());
-                                }
-                                else
-                                {
-                                    regulation_value = 1;
-                                }
-                                if(world->get_globalPlasmidList()->getPlasmidById("listPP0")->getOperonById("listPP0O0")->getGen(temp_tf) == NULL)
-                                {
-                                    GenCell* protein = new GenCell(temp_tf, 0, 0.0, 0.0);
-                                    world->get_globalPlasmidList()->getPlasmidById("listPP0")->getOperonById("listPP0O0")->insertGens(protein);
-                                }
-                                if(regulation_value == -1)
-                                {
-                                   TD.push_back(world->get_globalPlasmidList()->getPlasmidById("listPP0")->getOperonById("listPP0O0")->getGen(temp_tf));
-                                }
-                                else if(regulation_value == 1)
-                                {
-                                   TA.push_back(world->get_globalPlasmidList()->getPlasmidById("listPP0")->getOperonById("listPP0O0")->getGen(temp_tf));
-                                }
-                                j++;
-                            }while(j!= transcription_factors->end());
+                    op_data.promoter.gate = gate;
+                    // promoter gate
 
-                            op->getPromoter()->setListTA(TA);
-                            op->getPromoter()->setListTD(TD);
-                        }
-                    }
                 }
-                else
+
+                if( promoter->getField( "transcription_factors" ) && promoter->getField( "transcription_factors" )->get_type() == Value::LIST)
                 {
-                    std::vector<GenCell*> TD;
-                    std::vector<GenCell*> TA;
-                    temp_tf = "signaltempxyz";
-                    if(world->get_globalPlasmidList()->getPlasmidById("listPP0")->getOperonById("listPP0O0")->getGen(temp_tf) == NULL)
+                    transcription_factors = promoter->getField( "transcription_factors" )->list_value();
+                    if(transcription_factors != NULL && !transcription_factors->empty())
                     {
-                        GenCell* protein = new GenCell(temp_tf, 0, 0.0, 0.0);
-                        world->get_globalPlasmidList()->getPlasmidById("listPP0")->getOperonById("listPP0O0")->insertGens(protein);
+                        j = transcription_factors->begin();
+                        do
+                        {
+                            temp_tf = (*j)->string_value();
+                            if(temp_tf.at(0) == '-')
+                            {
+                                op_data.promoter.regulation.push_back(false);
+                                temp_tf.erase(temp_tf.begin());
+                            }
+                            else
+                            {
+                                op_data.promoter.regulation.push_back(true);
+                            }
+                            op_data.promoter.names.push_back(temp_tf);
+                            std::vector<float> times = {std::numeric_limits<float>::max(), (float)0.0f};
+                            (world->get_protein_map())->insert(std::make_pair(temp_tf, times));
+                            j++;
+                        }while(j!= transcription_factors->end());
                     }
-                    TA.push_back(world->get_globalPlasmidList()->getPlasmidById("listPP0")->getOperonById("listPP0O0")->getGen(temp_tf));
-                    op->getPromoter()->setListTA(TA);
-                    op->getPromoter()->setListTD(TD);
+                    //tfs
                 }
+
+                /*else
+                {
+                    std::vector<std::string> tf_names;
+                    temp_tf = "signaltempxyz";
+                    tf_names.push_back(temp_tf);
+                    //tfs signal
+                }*/
 
                 if( promoter->getField( "noise" ) && promoter->getField("noise")->get_type() == Value::RECORD)
                 {
@@ -541,7 +513,6 @@ Value *new_operon (std::list<Value *> * args, Scope * s )
                             {
                                 onNoise = 0.0;
                             }
-                            op->setoffTOon(onNoise);
                         }
                         if( noise->getField( "toOff" ) && noise->getField( "toOff" )->get_type() == Value::REAL )
                         {
@@ -554,9 +525,20 @@ Value *new_operon (std::list<Value *> * args, Scope * s )
                             {
                                 offNoise = 0.0;
                             }
-                            op->setonTOoff(offNoise);
                         }
+                        if( noise->getField( "noise_time" ) && noise->getField( "noise_time" )->get_type() == Value::REAL )
+                        {
+                            noiseTime = (float)(noise->getField( "noise_time" )->real_value());
+                            if(noiseTime < 0.0)
+                            {
+                                noiseTime = 0.0;
+                            }
+                        }
+
                     }
+                    op_data.promoter.noise = {onNoise, offNoise, noiseTime};
+                    //noise
+
                 }
             }
         }
@@ -615,26 +597,30 @@ Value *new_operon (std::list<Value *> * args, Scope * s )
                 }
                 for(k=proteins->begin(); k!=proteins->end(); k++)
                 {
-                    if(world->get_globalPlasmidList()->getPlasmidById("listPP0")->getOperonById("listPP0O0")->getGen((*k)->string_value()) == NULL)
-                    {
-                        GenCell* protein = new GenCell((*k)->string_value(), 0, 0.0, 0.0);
-                        world->get_globalPlasmidList()->getPlasmidById("listPP0")->getOperonById("listPP0O0")->insertGens(protein);
-                    }
+                    output_prot = (*k)->string_value();
+
                     if(protein_times != NULL)
                     {
-                        if(!op->isGenExist((*k)->string_value()))
-                        {
-                            op->insertGens(world->get_globalPlasmidList()->getPlasmidById("listPP0")->getOperonById("listPP0O0")->getGen((*k)->string_value()));
-                            op->getGen((*k)->string_value())->setParent(op);
-                        }
-                        op->getGen((*k)->string_value())->setTimeAct((double)(*j)->real_value());
+                        act_time = (*j)->real_value();
                         j++;
+                    }
+                    else
+                    {
+                        act_time = 0;
                     }
                     if(protein_sigma != NULL)
                     {
-                        op->getGen((*k)->string_value())->setSigmaAct((double)(*l)->real_value());
+                        act_var_time = (*l)->real_value();
                         l++;
                     }
+                    else
+                    {
+                        act_var_time = 0;
+                    }
+
+                    op_data.output_protein_names.push_back(output_prot);
+                    op_data.act_times.push_back(act_time);
+                    op_data.act_vars.push_back(act_var_time);
                 }
             }
         }
@@ -667,33 +653,50 @@ Value *new_operon (std::list<Value *> * args, Scope * s )
                 {
                     l = protein_sigma->begin();
                 }
+
+
                 for(k=proteins->begin(); k!=proteins->end(); k++)
                 {
-                    if(world->get_globalPlasmidList()->getPlasmidById("listPP0")->getOperonById("listPP0O0")->getGen((*k)->string_value()) == NULL)
-                    {
-                        GenCell* protein = new GenCell((*k)->string_value(), 0, 0.0, 0.0);
-                        world->get_globalPlasmidList()->getPlasmidById("listPP0")->getOperonById("listPP0O0")->insertGens(protein);
-                    }
+                    output_prot = (*k)->string_value();
+
                     if(protein_times != NULL)
                     {
-                        if(!op->isGenExist((*k)->string_value()))
-                        {
-                            op->insertGens(world->get_globalPlasmidList()->getPlasmidById("listPP0")->getOperonById("listPP0O0")->getGen((*k)->string_value()));
-                            op->getGen((*k)->string_value())->setParent(op);
-                        }
-                        op->getGen((*k)->string_value())->setTimeDeg((double)(*j)->real_value());
+                        deg_time = (*j)->real_value();
                         j++;
+                    }
+                    else
+                    {
+                        deg_time = std::numeric_limits<float>::max();
                     }
                     if(protein_sigma != NULL)
                     {
-                        op->getGen((*k)->string_value())->setSigmaDeg((double)(*l)->real_value());
+                        deg_var_time = (*l)->real_value();
                         l++;
                     }
+                    else
+                    {
+                        deg_var_time = 0;
+                    }
+
+
+                    if((world->get_protein_map())->find(output_prot) != (world->get_protein_map())->end())
+                    {
+                        stored_deg_time = (world->get_protein_map())->at(output_prot).at(0);
+                        if(deg_time < stored_deg_time)
+                        {
+                            (*world->get_protein_map())[output_prot] = {deg_time, deg_var_time};
+                        }
+                    }
+                    else
+                    {
+                        (*world->get_protein_map())[output_prot] = {deg_time, deg_var_time};
+                    }
+
                 }
             }
         }
 
-        if ( data->getField ( "rna_act_times" ) && data->getField( "rna_act_times" )->get_type() == Value::RECORD)
+        /*if ( data->getField ( "rna_act_times" ) && data->getField( "rna_act_times" )->get_type() == Value::RECORD)
         {
             rnaAtimes = data->getField( "rna_act_times" );
             if( rnaAtimes != NULL )
@@ -801,8 +804,9 @@ Value *new_operon (std::list<Value *> * args, Scope * s )
                     }
                 }
             }
-        }
-        world->get_globalPlasmidList()->getPlasmidById("listPP0")->insertOperon(operon_name, op);
+        }*/
+
+        (world->get_operon_map())->insert(std::make_pair(operon_name, op_data));
         world->setNoProt(false);
     }
     return new Value ( Value::UNIT );
@@ -813,6 +817,56 @@ Value * assign_operons_to_plasmids (std::list<Value *> * args, Scope * s ) {
     World * world = current_gro_program->get_world();
     std::list<Value *>::iterator i = args->begin();
     ASSERT(args->size() == 1);
+    //for(std::map<std::string, std::vector<float>>::iterator it = world->get_protein_map()->begin(); it != world->get_protein_map()->end(); ++it)
+    for(auto it : *world->get_protein_map())
+    {
+        world->getPlasmidPool()->createProtein(it.second[0], it.second[1], it.first);
+    }
+
+    //for(std::map<std::string, std::vector<float>>::iterator it = world->get_operon_map()->begin(); it != world->get_operon_map()->end(); ++it)
+    for(auto it : *world->get_operon_map())
+    {
+        std::vector<std::string> names = it.second.promoter.names;
+        std::vector<bool> regulations = it.second.promoter.regulation;
+        uint64_t mask = 0, mask_unique = 0;
+        uint64_t values = 0, values_unique = 0;
+        for(unsigned int i = 0; i < names.size(); ++i)
+        {
+            uint64_t id = world->getPlasmidPool()->getProteinByName(names[i])->getID();
+            uint64_t value = id * regulations[i];
+            mask |= id;
+            values |= value;
+            if(i == 0)
+            {
+               mask_unique |= id;
+               values_unique |= value;
+            }
+        }
+
+        float rateOn = 0.0, rateOff = 0.0;
+        if(it.second.promoter.noise[2] != 0)
+        {
+            rateOn = -log(1-(it.second.promoter.noise[0]))/it.second.promoter.noise[2];
+            rateOff = -log(1-(it.second.promoter.noise[1]))/it.second.promoter.noise[2];
+        }
+
+        cg::Promoter P0(mask, values, it.second.promoter.gate, cg::Promoter::BreakingState::NOT_BROKEN, std::numeric_limits<float>::infinity(), std::numeric_limits<float>::infinity());
+
+        std::vector<std::string>& gene_names = it.second.output_protein_names;
+        //A partir del numero de genes, se crean y leen los tiempos y vars y se van colocando en el vector genes que
+        // luego va al operon - creado en la plasmidpool
+        std::vector<cg::Gene> genes;
+
+        for(unsigned int i = 0; i < gene_names.size(); ++i)
+        {
+            cg::Gene g(world->getPlasmidPool()->getProteinByName(it.second.output_protein_names[i]), it.second.act_times[i], it.second.act_vars[i]);
+            genes.push_back(g);
+        }
+
+        world->getPlasmidPool()->createOperon(P0,genes,it.first);
+    }
+
+    //Recuerda cargar datos de operon, proteina y genes!
 
     Value * data = *i;
     std::list<Value*> * operons = NULL;
@@ -820,14 +874,8 @@ Value * assign_operons_to_plasmids (std::list<Value *> * args, Scope * s ) {
 
     SymbolTable* fields;
     std::list<std::string> field_names;
-    GenPlasmid* new_plasmid;
-    std::string p_name;
-    std::string base = "Plasmid";
 
-    int n = 0;
-
-    std::vector<GenOperon*>* insert_op = NULL;
-    GenOperon* op_ref = NULL;
+    std::vector<const cg::Operon*> insert_op;
 
     if ( data->get_type() == Value::RECORD )
     {
@@ -837,10 +885,6 @@ Value * assign_operons_to_plasmids (std::list<Value *> * args, Scope * s ) {
         for(std::list<std::string>::iterator iter = field_names.begin(); iter != field_names.end(); ++iter)
         {
             std::string k =  (*iter);
-            p_name.assign(base);
-            p_name.append(std::to_string(n));
-            n++;
-            new_plasmid = new GenPlasmid(p_name, k);
             if ( data->getField ( k.c_str() ) && data->getField( k.c_str() )->get_type() == Value::LIST)
             {
                 operons = data->getField ( k.c_str() )->list_value();
@@ -848,17 +892,26 @@ Value * assign_operons_to_plasmids (std::list<Value *> * args, Scope * s ) {
                 {
                     for(j=operons->begin(); j!=operons->end(); j++)
                     {
-                        insert_op = world->get_globalPlasmidList()->getPlasmidById("listPP0")->getOperonByName((*j)->string_value());
-                        if(insert_op->size() == 1)
+                        if((world->getPlasmidPool()->getOperonByName((*j)->string_value())) != NULL)
                         {
-                            new_plasmid->insertOperon(insert_op);
-                            op_ref = new_plasmid->getOperon(new_plasmid->getSize()-1);
-                            op_ref->setParent(new_plasmid);
+                            insert_op.push_back((world->getPlasmidPool()->getOperonByName((*j)->string_value())));
+                        }
+                        else
+                        {
+                            //Error! Imprime (no hay operon definido).
                         }
                     }
                 }
             }
-            world->get_globalPlasmidList()->insertPlasmid(k, new_plasmid);
+            if(insert_op.size() != 0)
+            {
+                world->getPlasmidPool()->createPlasmid(insert_op,k);
+                insert_op.clear();
+            }
+            else
+            {
+                //Error! Plasmido no se crea.
+            }
         }
     }
     return new Value ( Value::UNIT );
@@ -878,10 +931,11 @@ Value * set_action (std::list<Value *> * args, Scope * s ) {
         param_list = *i;
     }
 
-    std::map<std::string,int> prot;
-    std::list<std::string> params;
+    bool regulation = false;
+    uint64_t mask = 0;
+    uint64_t values = 0;
 
-    int prot_value=0;
+    std::list<std::string> params;
     std::string protein_name;
     std::string zero("0");
 
@@ -892,18 +946,19 @@ Value * set_action (std::list<Value *> * args, Scope * s ) {
         protein_name = (*i)->string_value();
         if(protein_name.at(0) == '-')
         {
-            prot_value = -1;
+            regulation = false;
             protein_name.erase(protein_name.begin());
         }
         else
         {
-            prot_value = 1;
+            regulation = true;
         }
-        prot.insert(std::pair<std::string,int>(protein_name,prot_value));
-    }
 
-    world->add_action_prot(prot);
-    world->add_action_names(func_name->string_value());
+        uint64_t id = world->getPlasmidPool()->getProteinByName(protein_name)->getID();
+        uint64_t value = id * regulation;
+        mask |= id;
+        values |= value;
+    }
 
     if(args->size() == 3)
     {
@@ -915,8 +970,8 @@ Value * set_action (std::list<Value *> * args, Scope * s ) {
     {
         params.push_back(zero);
     }
-    world->add_action_param(params);
-    world->set_num_actions(world->get_num_actions()+1);
+
+    world->add_action_data(func_name->string_value(), mask, values, params);
     world->setNoAction(false);
     return new Value ( Value::UNIT );
 }
@@ -931,7 +986,7 @@ Value * reset_actions (std::list<Value *> * args, Scope * s ) {
     world->clear_riboswitches_map();
     world->clear_molecules_map();
     world->clear_analog_molecules_map();*/
-    world->set_num_actions(0);
+    //world->set_num_actions(0);
     return new Value ( Value::UNIT );
 }
 
@@ -2038,7 +2093,7 @@ Value * set_param ( std::list<Value *> * args, Scope * s ) {
 
   if ( name->string_value() == "seed" )
   {
-      world->setRNG(new erreenege((bool)val->num_value(), (unsigned int)val->num_value()));
+        world->getPlasmidPool()->getRandomEngine().seed((unsigned int)val->num_value());
   }
 
   return new Value ( Value::UNIT );
@@ -2283,43 +2338,106 @@ Value * gro_dump_single (std::list<Value *> * args, Scope * s ) {
     World * world = current_gro_program->get_world();
     std::list<Value *>::iterator i = args->begin();
     int index = (*i)->int_value(); i++;
-    std::map<std::string,int> activeProteins, inactiveProteins;
-    std::vector<std::pair<std::string, int>> allProteins;
-    std::string name;
-    activeProteins = current_cell->getPlasmidList()->getGensActive();
-    inactiveProteins = current_cell->getPlasmidList()->getGensDeactive();
 
-    for(auto it : activeProteins)
+    /*std::vector<std::string> names = it->second->promoter.names;
+    std::vector<bool> regulations = it->second->promoter.regulation;
+    uint64_t mask = 0, mask_unique = 0;
+    uint64_t values = 0, values_unique = 0;
+    for(unsigned int i = 0; i < names.size(); ++i)
     {
-        allProteins.push_back(std::make_pair(it.first,1));
-    }
+        uint64_t id = world->getPlasmidPool()->getProteinByName(names[i])->getID();
+        uint64_t value = id * regulations[i];
+        mask |= id;
+        values |= value;
+        if(i == 0)
+        {
+           mask_unique |= id;
+           values_unique |= value;
+        }
+    }*/
 
-    for(auto it : inactiveProteins)
+    std::vector<std::string> prot_names;
+
+    for(auto it : *(world->get_protein_map()))
     {
-        allProteins.push_back(std::make_pair(it.first,0));
+        prot_names.push_back(it.first);
     }
-
-    std::sort(allProteins.begin(), allProteins.end());
 
     //REVISAR ESTO. Mejor quizas hacer un internal proteins global y consultar por ese en la bacteria que estoy mirando.
     //Idea: Hacer un mapa de cada plasmidList de todas las proteinas (activas e inactivas) y luego las misma operacion global.
 
-    if(!world->get_output_started() || allProteins.size() != current_cell->getNProts())
+    if(!world->get_output_started())
     {
         fprintf(world->fileio_list[index], "time, id, x, y, theta, volume, gt_inst, gfp, rfp, yfp, cfp");
-        for(auto it : allProteins)
+        for(auto it : prot_names)
         {
-            name = it.first;
-            fprintf(world->fileio_list[index], ", %s", name.c_str());
+            fprintf(world->fileio_list[index], ", %s", it.c_str());
         }
         fprintf(world->fileio_list[index], "\n");
-
-        current_cell->setNProts(allProteins.size());
         world->set_output_started(true);
     }
 
     if ( 0 <= index && index < world->fileio_list.size() ) {
-        current_cell->state_to_file(world->fileio_list[index]);
+        current_cell->state_to_file(world->fileio_list[index], prot_names);
+        fflush ( world->fileio_list[index] );
+    }
+
+    return new Value ( Value::UNIT );
+}
+
+Value * gro_dump_single_reduced (std::list<Value *> * args, Scope * s ) {
+
+    World * world = current_gro_program->get_world();
+    std::list<Value *>::iterator i = args->begin();
+    int index = (*i)->int_value(); i++;
+
+    /*std::vector<std::string> names = it->second->promoter.names;
+    std::vector<bool> regulations = it->second->promoter.regulation;
+    uint64_t mask = 0, mask_unique = 0;
+    uint64_t values = 0, values_unique = 0;
+    for(unsigned int i = 0; i < names.size(); ++i)
+    {
+        uint64_t id = world->getPlasmidPool()->getProteinByName(names[i])->getID();
+        uint64_t value = id * regulations[i];
+        mask |= id;
+        values |= value;
+        if(i == 0)
+        {
+           mask_unique |= id;
+           values_unique |= value;
+        }
+    }*/
+
+    std::vector<std::string> prot_names;
+
+    for(auto it : *(world->get_protein_map()))
+    {
+        prot_names.push_back(it.first);
+    }
+
+    //REVISAR ESTO. Mejor quizas hacer un internal proteins global y consultar por ese en la bacteria que estoy mirando.
+    //Idea: Hacer un mapa de cada plasmidList de todas las proteinas (activas e inactivas) y luego las misma operacion global.
+
+    char time[5];
+    char equis[2];
+
+    strcpy(time, "time");
+    strcpy(equis, "x");
+
+
+    if(!world->get_output_started())
+    {
+        fprintf(world->fileio_list[index], "%8s,%5s", time, equis);
+        for(auto it : prot_names)
+        {
+            fprintf(world->fileio_list[index], ", %6s", it.c_str());
+        }
+        fprintf(world->fileio_list[index], "\n");
+        world->set_output_started(true);
+    }
+
+    if ( 0 <= index && index < world->fileio_list.size() ) {
+        current_cell->state_to_file_reduced(world->fileio_list[index], prot_names);
         fflush ( world->fileio_list[index] );
     }
 
@@ -2332,13 +2450,15 @@ Value * gro_dump_multiple(std::list<Value *> * args, Scope * s){
     int n_cond = 0, j = 0;
     int *counts;
 
-    std::vector<std::pair<std::string, int>> condition_vector;
+    uint64_t mask = 0;
+    uint64_t values = 0;
+    bool regulation = false;
+    //std::vector<std::pair<std::string, int>> condition_vector;
 
     std::list<Value *>::iterator i = args->begin();
     std::list<Value *>::iterator cds;
     std::list<Value *>::iterator l;
     std::string protein_name;
-    int prot_value = 0;
     int index = (*i)->int_value();
     i++;
     cds = i;
@@ -2362,18 +2482,20 @@ Value * gro_dump_multiple(std::list<Value *> * args, Scope * s){
             protein_name = (*l)->string_value();
             if(protein_name.at(0) == '-')
             {
-                prot_value = -1;
+                regulation = false;
                 protein_name.erase(protein_name.begin());
             }
             else
             {
-                prot_value = 1;
+                regulation = true;
             }
-            condition_vector.push_back(std::make_pair(protein_name,prot_value));
+            mask |= world->getPlasmidPool()->getProteinByName(protein_name)->getID();
+            values |= (mask & regulation);
         }
-        counts[j] += world->check_gen_cond_pop(condition_vector);
+        counts[j] += world->check_gen_cond_pop({mask, values});
         j++;
-        condition_vector.clear();
+        mask = 0;
+        values = 0;
     }
 
     fprintf(world->fileio_list[index],"%f, ", world->get_time());
@@ -2546,7 +2668,7 @@ Value * chemostat ( std::list<Value *> * args, Scope * s ) {
 Value * World::map_to_cells ( Expr * e ) {
 
   std::list<Value *> * L = new std::list<Value *>;
-  std::list<Cell *>::iterator j;
+  std::vector<Cell *>::iterator j;
 
   for ( j=population->begin(); j!=population->end(); j++ ) {
     L->push_back ( (*j)->eval ( e ) );

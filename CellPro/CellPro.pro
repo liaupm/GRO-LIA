@@ -1,21 +1,23 @@
 QT       -= core
 
-TARGET = cellprot
+TARGET = cellpro
 TEMPLATE = lib
 CONFIG += staticlib
 
 SOURCES += \
-    src/erreenege.cpp \
-    src/GenCell.cpp \
-    src/GenListPlasmid.cpp \
-    src/GenOperon.cpp \
-    src/GenPlasmid.cpp \
-    src/GenPromoter.cpp
+    src/cg/Gene.cpp \
+    src/cg/Genome.cpp \
+    src/cg/Operon.cpp \
+    src/cg/Plasmid.cpp \
+    src/cg/PlasmidPool.cpp \
+    src/cg/Promoter.cpp \
+    src/cg/Protein.cpp
 
 HEADERS += \
-    include/erreenege.h \
-    include/GenCell.h \
-    include/GenListPlasmid.h \
-    include/GenOperon.h \
-    include/GenPlasmid.h \
-    include/GenPromoter.h
+    include/cg/Gene.hpp \
+    include/cg/Genome.hpp \
+    include/cg/Operon.hpp \
+    include/cg/Plasmid.hpp \
+    include/cg/PlasmidPool.hpp \
+    include/cg/Promoter.hpp \
+    include/cg/Protein.hpp

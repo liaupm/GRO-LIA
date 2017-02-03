@@ -35,6 +35,7 @@ void EColi::compute_parameter_derivatives ( void ) {
 }
 
 EColi::EColi ( World * w, float x, float y, float a) : Cell ( w ) {
+  //, Cell::genome(w->getPlasmidPool()) {
 
   //float sd = get_param ( "ecoli_division_size_variance" );
   float sd = get_param ( "ecoli_division_size_variance" );
@@ -62,7 +63,7 @@ EColi::EColi ( World * w, float x, float y, float a) : Cell ( w ) {
 
 }
 
-EColi::EColi ( World * w, ceBody* body ) : Cell ( w ) {
+EColi::EColi ( World * w, ceBody* body, cg::Genome *genome ) : Cell ( w, *genome, true ) {
 
   float sd = get_param ( "ecoli_division_size_variance" );
   div_length = get_param ( "ecoli_division_length_mean" ) - sd + frand() * sd * 2;
@@ -227,59 +228,7 @@ EColi * EColi::divide ( void ) {
 
     ceBody* daughterBody = ceDivideBody(body, da, frac);
 
-    EColi * daughter = new EColi ( world, daughterBody );
- 
-    for(auto copy : *(this->getPlasmidList()->getPlasmids()))
-    {
-        daughter->getPlasmidList()->insertPlasmid(copy->getName(), copy);
-        for(auto ops : *(copy->getOperons()))
-        {
-            if(!ops->getNoisef())
-            {
-                ops->setNoise(world->get_time(), world->get_sim_dt());
-            }
-        }
-    }
-
-    for(auto pls : *(daughter->getPlasmidList()->getPlasmids()))
-    {
-        pls->setParent(daughter->getPlasmidList());
-        pls->setEnvPlasmid(daughter->getEnvPlasmid());
-        for(auto ops : *(pls->getOperons()))
-        {
-            ops->getPromoter()->setListPlasmid(daughter->getPlasmidList());
-        }
-        daughter->getPlasmidList()->setRNG(world->getRNG());
-        for(auto ops : *(pls->getOperons()))
-        {
-            ops->setNoise(world->get_time(), world->get_sim_dt());
-        }
-    }
-
-    std::vector<GenCell*> temp_list_dec;
-    std::vector<GenCell*> temp_list_act;
-    for(auto pls : *(daughter->getPlasmidList()->getPlasmids()))
-    {
-        temp_list_act.clear();
-        temp_list_dec.clear();
-        for(auto ops: *(pls->getOperons()))
-        {
-            for(auto gen: (*(ops->getGens())))
-            {
-                if((gen->getTime() >= 0) && gen->getState() == 1)
-                {
-                    temp_list_dec.push_back(gen);
-                }
-
-                if((gen->getTime() >= 0) && gen->getState() == 0)
-                {
-                    temp_list_act.push_back(gen);
-                }
-            }
-        }
-        pls->setActList(temp_list_act);
-        pls->setDecList(temp_list_dec);
-    }
+    EColi * daughter = new EColi ( world, daughterBody, &genome );
 
     daughter->set_param_map ( get_param_map() );
 

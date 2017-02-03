@@ -34,6 +34,11 @@
 #include <vector>
 #include <string>
 #include <map>
+#include <array>
+#include <cstdint>
+#include <random>
+#include <limits>
+#include <algorithm>
 
 #include <stdint.h>
 
@@ -50,8 +55,7 @@
 #include "Theme.h"
 #endif
 
-#include "erreenege.h"
-#include "GenListPlasmid.h"
+#include "cg/PlasmidPool.hpp"
 
 //void set_throttle ( bool val );
 void register_gro_functions ( void );
@@ -185,6 +189,22 @@ class GroThread;
 
 typedef void (Cell::*FnPointer)(std::list<std::string>);
 
+typedef struct
+{
+    std::vector<std::string> names;
+    std::vector<bool> regulation;
+    std::array<float,3> noise;
+    cg::Promoter::Gate gate;
+} promoter_data;
+
+typedef struct
+{
+    std::vector<std::string> output_protein_names;
+    std::vector<float> act_times;
+    std::vector<float> act_vars;
+    promoter_data promoter;
+} operon_data;
+
 class World { 
 
  public:
@@ -298,7 +318,8 @@ class World {
 
   std::vector<FILE *> fileio_list;
 
-  int check_gen_cond_pop ( std::vector<std::pair<std::string, int>> );
+  //REVISAR
+  int check_gen_cond_pop ( std::vector<uint64_t> );
   int check_plasmid_cond_pop ( std::vector<std::pair<std::string, int>> );
 
   void dump ( FILE * fp );
@@ -311,18 +332,28 @@ class World {
 
 
   //CORREGIR TODAS LAS FUNCIONES DE ACCION
-  void add_action_prot(std::map<std::string, int> b){action_prot_list.push_back(b);}
-  void add_action_param( std::list<std::string> ls){action_param_list.push_back(ls);}
-  void add_action_names ( std::string s ){action_names.push_back (s);}
+  void add_action_data(std::string name, uint64_t mask, uint64_t values, std::list<std::string> param_list)
+  {
+      action_data d;
+      d.name = name;
+      d.mask = mask;
+      d.values = values;
+      d.param_list = param_list;
+      action_info.push_back(d);
+  }
 
+  /*void add_action_prot(std::map<std::string, int> b){action_prot_list.push_back(b);}
+  void add_action_param( std::list<std::string> ls){action_param_list.push_back(ls);}
+  void add_action_names ( std::string s ){action_names.push_back (s);}*/
+
+  void randomize_actions();
   void remove_all_actions();
 
-  std::map<std::string, int> get_action_prot(int f){return action_prot_list[f];}
-  std::string get_action_name(int i) {return action_names[i];}
-  std::list<std::string> get_action_param( int i){return action_param_list[i];}
+  std::vector<uint64_t> get_action_prot(int i){return {action_info.at(i).mask, action_info.at(i).values};}
+  const std::string& get_action_name(int i) {return action_info.at(i).name;}
+  const std::list<std::string>& get_action_param(int i){return action_info.at(i).param_list;}
 
-  int get_num_actions ( void ) { return num_actions; }
-  void set_num_actions ( int n ) { num_actions=n; }
+  int get_num_actions ( void ) { return action_info.size(); }
 
   FnPointer get_action (std::string);
 
@@ -362,12 +393,8 @@ class World {
   bool get_output_started2();
   void set_output_started2(bool);
 
-  inline GenListPlasmid* get_globalPlasmidList() {return plasmidList;}
-  inline GenPlasmid* get_globalPlasmid() {return globalPlasmid;}
-  inline GenOperon* get_globalOperon() {return globalOperon;}
+  inline cg::PlasmidPool* getPlasmidPool() {return &plasmidCloud;}
 
-  inline erreenege* getRNG(){return(this->rng);}
-  inline void setRNG(erreenege* r){this->rng = r;}
 
   inline void add_cross_feeding_max_emit(int id, float conc)
   {
@@ -399,6 +426,17 @@ class World {
       cross_feeding_max_absorb[id] = v;
   }
 
+  inline std::map<std::string, std::vector<float>>* get_protein_map()
+  {
+      return proteins;
+  }
+
+  inline std::map<std::string, operon_data>* get_operon_map()
+  {
+      return operons;
+  }
+
+
   Grid<CSCell>* handler = nullptr;
   Grid<DBCell>* dhandler = nullptr;
   //std::map<int, std::string> diff_methods;
@@ -417,7 +455,7 @@ class World {
   //cpSpace * space;
   ceSpace * space;
   signalGrid_t * signalGrid;
-  std::list<Cell *> * population;
+  std::vector<Cell *> * population;
   std::vector<Signal *> signal_list;
   std::vector<Reaction> reaction_list;
   MicroProgram * prog;
@@ -436,9 +474,19 @@ class World {
 
   bool noprot, noaction;
 
-  std::vector<std::map<std::string, int> > action_prot_list;
+  typedef struct
+  {
+      std::string name;
+      uint64_t mask;
+      uint64_t values;
+      std::list<std::string> param_list;
+  } action_data;
+
+  std::vector<action_data> action_info;
+
+  /*std::vector<std::map<std::string, int> > action_prot_list;
   std::vector<std::list<std::string> > action_param_list; //lista de parametros de funciones
-  std::vector<std::string> action_names;
+  std::vector<std::string> action_names;*/
 
   typedef std::map<std::string,FnPointer> actions; //mapa de nombres de funciones
   actions map_actions;
@@ -446,11 +494,11 @@ class World {
   int num_actions;
 
   //CellPro
-  erreenege *rng;
-  GenListPlasmid *plasmidList;
-  GenPlasmid* globalPlasmid;
-  GenOperon* globalOperon;
-  GenPromoter* globalPromoter;
+
+  std::map<std::string, std::vector<float>> *proteins;
+  std::map<std::string, operon_data> *operons ;
+
+  cg::PlasmidPool plasmidCloud;
 
   int stt_time;
 

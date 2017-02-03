@@ -726,12 +726,13 @@ moc_gui.cpp: ../../../Qt5.7.0/5.7/clang_64/lib/QtWidgets.framework/Headers/QMain
 		../CellNutrient/include/CNGrid.h \
 		../CellNutrient/include/CNvector.h \
 		../CellNutrient/include/CNNutrients.h \
-		../CellPro/include/GenListPlasmid.h \
-		../CellPro/include/GenPlasmid.h \
-		../CellPro/include/GenCell.h \
-		../CellPro/include/GenOperon.h \
-		../CellPro/include/GenPromoter.h \
-		../CellPro/include/erreenege.h \
+		../CellPro/include/cg/Genome.hpp \
+		../CellPro/include/cg/PlasmidPool.hpp \
+		../CellPro/include/cg/Plasmid.hpp \
+		../CellPro/include/cg/Operon.hpp \
+		../CellPro/include/cg/Promoter.hpp \
+		../CellPro/include/cg/Gene.hpp \
+		../CellPro/include/cg/Protein.hpp \
 		../gro-master/Defines.h \
 		../gro-master/Utility.h \
 		../gro-master/Theme.h \
@@ -777,12 +778,13 @@ moc_GroThread.cpp: ../gro-master/Micro.h \
 		../CellNutrient/include/CNGrid.h \
 		../CellNutrient/include/CNvector.h \
 		../CellNutrient/include/CNNutrients.h \
-		../CellPro/include/GenListPlasmid.h \
-		../CellPro/include/GenPlasmid.h \
-		../CellPro/include/GenCell.h \
-		../CellPro/include/GenOperon.h \
-		../CellPro/include/GenPromoter.h \
-		../CellPro/include/erreenege.h \
+		../CellPro/include/cg/Genome.hpp \
+		../CellPro/include/cg/PlasmidPool.hpp \
+		../CellPro/include/cg/Plasmid.hpp \
+		../CellPro/include/cg/Operon.hpp \
+		../CellPro/include/cg/Promoter.hpp \
+		../CellPro/include/cg/Gene.hpp \
+		../CellPro/include/cg/Protein.hpp \
 		../gro-master/Defines.h \
 		../gro-master/Utility.h \
 		../gro-master/Theme.h \
@@ -833,12 +835,13 @@ moc_GroWidget.cpp: ../../../Qt5.7.0/5.7/clang_64/lib/QtGui.framework/Headers/QPi
 		../CellNutrient/include/CNGrid.h \
 		../CellNutrient/include/CNvector.h \
 		../CellNutrient/include/CNNutrients.h \
-		../CellPro/include/GenListPlasmid.h \
-		../CellPro/include/GenPlasmid.h \
-		../CellPro/include/GenCell.h \
-		../CellPro/include/GenOperon.h \
-		../CellPro/include/GenPromoter.h \
-		../CellPro/include/erreenege.h \
+		../CellPro/include/cg/Genome.hpp \
+		../CellPro/include/cg/PlasmidPool.hpp \
+		../CellPro/include/cg/Plasmid.hpp \
+		../CellPro/include/cg/Operon.hpp \
+		../CellPro/include/cg/Promoter.hpp \
+		../CellPro/include/cg/Gene.hpp \
+		../CellPro/include/cg/Protein.hpp \
 		../gro-master/Defines.h \
 		../gro-master/Utility.h \
 		../gro-master/Theme.h \
@@ -920,12 +923,13 @@ main.o: ../gro-master/main.cpp ../../../Qt5.7.0/5.7/clang_64/lib/QtCore.framewor
 		../CellNutrient/include/CNGrid.h \
 		../CellNutrient/include/CNvector.h \
 		../CellNutrient/include/CNNutrients.h \
-		../CellPro/include/GenListPlasmid.h \
-		../CellPro/include/GenPlasmid.h \
-		../CellPro/include/GenCell.h \
-		../CellPro/include/GenOperon.h \
-		../CellPro/include/GenPromoter.h \
-		../CellPro/include/erreenege.h \
+		../CellPro/include/cg/Genome.hpp \
+		../CellPro/include/cg/PlasmidPool.hpp \
+		../CellPro/include/cg/Plasmid.hpp \
+		../CellPro/include/cg/Operon.hpp \
+		../CellPro/include/cg/Promoter.hpp \
+		../CellPro/include/cg/Gene.hpp \
+		../CellPro/include/cg/Protein.hpp \
 		../gro-master/Defines.h \
 		../gro-master/Utility.h \
 		../gro-master/Theme.h \
@@ -1088,12 +1092,13 @@ gui.o: ../gro-master/gui.cpp ../../../Qt5.7.0/5.7/clang_64/lib/QtGui.framework/H
 		../CellNutrient/include/CNGrid.h \
 		../CellNutrient/include/CNvector.h \
 		../CellNutrient/include/CNNutrients.h \
-		../CellPro/include/GenListPlasmid.h \
-		../CellPro/include/GenPlasmid.h \
-		../CellPro/include/GenCell.h \
-		../CellPro/include/GenOperon.h \
-		../CellPro/include/GenPromoter.h \
-		../CellPro/include/erreenege.h \
+		../CellPro/include/cg/Genome.hpp \
+		../CellPro/include/cg/PlasmidPool.hpp \
+		../CellPro/include/cg/Plasmid.hpp \
+		../CellPro/include/cg/Operon.hpp \
+		../CellPro/include/cg/Promoter.hpp \
+		../CellPro/include/cg/Gene.hpp \
+		../CellPro/include/cg/Protein.hpp \
 		../gro-master/Defines.h \
 		../gro-master/Utility.h \
 		../gro-master/Theme.h \
@@ -1240,12 +1245,13 @@ GroThread.o: ../gro-master/GroThread.cpp ../../../Qt5.7.0/5.7/clang_64/lib/QtGui
 		../CellNutrient/include/CNGrid.h \
 		../CellNutrient/include/CNvector.h \
 		../CellNutrient/include/CNNutrients.h \
-		../CellPro/include/GenListPlasmid.h \
-		../CellPro/include/GenPlasmid.h \
-		../CellPro/include/GenCell.h \
-		../CellPro/include/GenOperon.h \
-		../CellPro/include/GenPromoter.h \
-		../CellPro/include/erreenege.h \
+		../CellPro/include/cg/Genome.hpp \
+		../CellPro/include/cg/PlasmidPool.hpp \
+		../CellPro/include/cg/Plasmid.hpp \
+		../CellPro/include/cg/Operon.hpp \
+		../CellPro/include/cg/Promoter.hpp \
+		../CellPro/include/cg/Gene.hpp \
+		../CellPro/include/cg/Protein.hpp \
 		../gro-master/Defines.h \
 		../gro-master/Utility.h \
 		../gro-master/Theme.h \
@@ -1395,12 +1401,13 @@ GroWidget.o: ../gro-master/GroWidget.cpp ../../../Qt5.7.0/5.7/clang_64/lib/QtGui
 		../CellNutrient/include/CNGrid.h \
 		../CellNutrient/include/CNvector.h \
 		../CellNutrient/include/CNNutrients.h \
-		../CellPro/include/GenListPlasmid.h \
-		../CellPro/include/GenPlasmid.h \
-		../CellPro/include/GenCell.h \
-		../CellPro/include/GenOperon.h \
-		../CellPro/include/GenPromoter.h \
-		../CellPro/include/erreenege.h \
+		../CellPro/include/cg/Genome.hpp \
+		../CellPro/include/cg/PlasmidPool.hpp \
+		../CellPro/include/cg/Plasmid.hpp \
+		../CellPro/include/cg/Operon.hpp \
+		../CellPro/include/cg/Promoter.hpp \
+		../CellPro/include/cg/Gene.hpp \
+		../CellPro/include/cg/Protein.hpp \
 		../gro-master/Defines.h \
 		../gro-master/Utility.h \
 		../gro-master/Theme.h \
@@ -1444,12 +1451,13 @@ Messages.o: ../gro-master/Messages.cpp ../gro-master/Micro.h \
 		../CellNutrient/include/CNGrid.h \
 		../CellNutrient/include/CNvector.h \
 		../CellNutrient/include/CNNutrients.h \
-		../CellPro/include/GenListPlasmid.h \
-		../CellPro/include/GenPlasmid.h \
-		../CellPro/include/GenCell.h \
-		../CellPro/include/GenOperon.h \
-		../CellPro/include/GenPromoter.h \
-		../CellPro/include/erreenege.h \
+		../CellPro/include/cg/Genome.hpp \
+		../CellPro/include/cg/PlasmidPool.hpp \
+		../CellPro/include/cg/Plasmid.hpp \
+		../CellPro/include/cg/Operon.hpp \
+		../CellPro/include/cg/Promoter.hpp \
+		../CellPro/include/cg/Gene.hpp \
+		../CellPro/include/cg/Protein.hpp \
 		../gro-master/Defines.h \
 		../gro-master/Utility.h \
 		../gro-master/Theme.h \
@@ -1482,12 +1490,13 @@ Signal.o: ../gro-master/Signal.cpp ../gro-master/Micro.h \
 		../CellNutrient/include/CNGrid.h \
 		../CellNutrient/include/CNvector.h \
 		../CellNutrient/include/CNNutrients.h \
-		../CellPro/include/GenListPlasmid.h \
-		../CellPro/include/GenPlasmid.h \
-		../CellPro/include/GenCell.h \
-		../CellPro/include/GenOperon.h \
-		../CellPro/include/GenPromoter.h \
-		../CellPro/include/erreenege.h \
+		../CellPro/include/cg/Genome.hpp \
+		../CellPro/include/cg/PlasmidPool.hpp \
+		../CellPro/include/cg/Plasmid.hpp \
+		../CellPro/include/cg/Operon.hpp \
+		../CellPro/include/cg/Promoter.hpp \
+		../CellPro/include/cg/Gene.hpp \
+		../CellPro/include/cg/Protein.hpp \
 		../gro-master/Defines.h \
 		../gro-master/Utility.h \
 		../gro-master/Theme.h \
@@ -1520,12 +1529,13 @@ Themes.o: ../gro-master/Themes.cpp ../gro-master/Micro.h \
 		../CellNutrient/include/CNGrid.h \
 		../CellNutrient/include/CNvector.h \
 		../CellNutrient/include/CNNutrients.h \
-		../CellPro/include/GenListPlasmid.h \
-		../CellPro/include/GenPlasmid.h \
-		../CellPro/include/GenCell.h \
-		../CellPro/include/GenOperon.h \
-		../CellPro/include/GenPromoter.h \
-		../CellPro/include/erreenege.h \
+		../CellPro/include/cg/Genome.hpp \
+		../CellPro/include/cg/PlasmidPool.hpp \
+		../CellPro/include/cg/Plasmid.hpp \
+		../CellPro/include/cg/Operon.hpp \
+		../CellPro/include/cg/Promoter.hpp \
+		../CellPro/include/cg/Gene.hpp \
+		../CellPro/include/cg/Protein.hpp \
 		../gro-master/Defines.h \
 		../gro-master/Utility.h \
 		../gro-master/Theme.h \
@@ -1562,12 +1572,13 @@ World.o: ../gro-master/World.cpp ../gro-master/GroThread.h \
 		../CellNutrient/include/CNGrid.h \
 		../CellNutrient/include/CNvector.h \
 		../CellNutrient/include/CNNutrients.h \
-		../CellPro/include/GenListPlasmid.h \
-		../CellPro/include/GenPlasmid.h \
-		../CellPro/include/GenCell.h \
-		../CellPro/include/GenOperon.h \
-		../CellPro/include/GenPromoter.h \
-		../CellPro/include/erreenege.h \
+		../CellPro/include/cg/Genome.hpp \
+		../CellPro/include/cg/PlasmidPool.hpp \
+		../CellPro/include/cg/Plasmid.hpp \
+		../CellPro/include/cg/Operon.hpp \
+		../CellPro/include/cg/Promoter.hpp \
+		../CellPro/include/cg/Gene.hpp \
+		../CellPro/include/cg/Protein.hpp \
 		../gro-master/Defines.h \
 		../gro-master/Utility.h \
 		../gro-master/Theme.h \
@@ -1613,12 +1624,13 @@ EColi.o: ../gro-master/EColi.cpp ../gro-master/EColi.h \
 		../CellNutrient/include/CNGrid.h \
 		../CellNutrient/include/CNvector.h \
 		../CellNutrient/include/CNNutrients.h \
-		../CellPro/include/GenListPlasmid.h \
-		../CellPro/include/GenPlasmid.h \
-		../CellPro/include/GenCell.h \
-		../CellPro/include/GenOperon.h \
-		../CellPro/include/GenPromoter.h \
-		../CellPro/include/erreenege.h \
+		../CellPro/include/cg/Genome.hpp \
+		../CellPro/include/cg/PlasmidPool.hpp \
+		../CellPro/include/cg/Plasmid.hpp \
+		../CellPro/include/cg/Operon.hpp \
+		../CellPro/include/cg/Promoter.hpp \
+		../CellPro/include/cg/Gene.hpp \
+		../CellPro/include/cg/Protein.hpp \
 		../gro-master/Defines.h \
 		../gro-master/Utility.h \
 		../gro-master/Theme.h \
@@ -1653,12 +1665,13 @@ Gro.o: ../gro-master/Gro.cpp ../gro-master/Micro.h \
 		../CellNutrient/include/CNGrid.h \
 		../CellNutrient/include/CNvector.h \
 		../CellNutrient/include/CNNutrients.h \
-		../CellPro/include/GenListPlasmid.h \
-		../CellPro/include/GenPlasmid.h \
-		../CellPro/include/GenCell.h \
-		../CellPro/include/GenOperon.h \
-		../CellPro/include/GenPromoter.h \
-		../CellPro/include/erreenege.h \
+		../CellPro/include/cg/Genome.hpp \
+		../CellPro/include/cg/PlasmidPool.hpp \
+		../CellPro/include/cg/Plasmid.hpp \
+		../CellPro/include/cg/Operon.hpp \
+		../CellPro/include/cg/Promoter.hpp \
+		../CellPro/include/cg/Gene.hpp \
+		../CellPro/include/cg/Protein.hpp \
 		../gro-master/Defines.h \
 		../gro-master/Utility.h \
 		../gro-master/Theme.h \
@@ -1700,12 +1713,13 @@ Cell.o: ../gro-master/Cell.cpp ../gro-master/GroThread.h \
 		../CellNutrient/include/CNGrid.h \
 		../CellNutrient/include/CNvector.h \
 		../CellNutrient/include/CNNutrients.h \
-		../CellPro/include/GenListPlasmid.h \
-		../CellPro/include/GenPlasmid.h \
-		../CellPro/include/GenCell.h \
-		../CellPro/include/GenOperon.h \
-		../CellPro/include/GenPromoter.h \
-		../CellPro/include/erreenege.h \
+		../CellPro/include/cg/Genome.hpp \
+		../CellPro/include/cg/PlasmidPool.hpp \
+		../CellPro/include/cg/Plasmid.hpp \
+		../CellPro/include/cg/Operon.hpp \
+		../CellPro/include/cg/Promoter.hpp \
+		../CellPro/include/cg/Gene.hpp \
+		../CellPro/include/cg/Protein.hpp \
 		../gro-master/Defines.h \
 		../gro-master/Utility.h \
 		../gro-master/Theme.h \
@@ -1750,12 +1764,13 @@ reaction.o: ../gro-master/reaction.cpp ../gro-master/Micro.h \
 		../CellNutrient/include/CNGrid.h \
 		../CellNutrient/include/CNvector.h \
 		../CellNutrient/include/CNNutrients.h \
-		../CellPro/include/GenListPlasmid.h \
-		../CellPro/include/GenPlasmid.h \
-		../CellPro/include/GenCell.h \
-		../CellPro/include/GenOperon.h \
-		../CellPro/include/GenPromoter.h \
-		../CellPro/include/erreenege.h \
+		../CellPro/include/cg/Genome.hpp \
+		../CellPro/include/cg/PlasmidPool.hpp \
+		../CellPro/include/cg/Plasmid.hpp \
+		../CellPro/include/cg/Operon.hpp \
+		../CellPro/include/cg/Promoter.hpp \
+		../CellPro/include/cg/Gene.hpp \
+		../CellPro/include/cg/Protein.hpp \
 		../gro-master/Defines.h \
 		../gro-master/Utility.h \
 		../gro-master/Theme.h \
@@ -1789,12 +1804,13 @@ Yeast.o: ../gro-master/Yeast.cpp ../gro-master/Yeast.h \
 		../CellNutrient/include/CNGrid.h \
 		../CellNutrient/include/CNvector.h \
 		../CellNutrient/include/CNNutrients.h \
-		../CellPro/include/GenListPlasmid.h \
-		../CellPro/include/GenPlasmid.h \
-		../CellPro/include/GenCell.h \
-		../CellPro/include/GenOperon.h \
-		../CellPro/include/GenPromoter.h \
-		../CellPro/include/erreenege.h \
+		../CellPro/include/cg/Genome.hpp \
+		../CellPro/include/cg/PlasmidPool.hpp \
+		../CellPro/include/cg/Plasmid.hpp \
+		../CellPro/include/cg/Operon.hpp \
+		../CellPro/include/cg/Promoter.hpp \
+		../CellPro/include/cg/Gene.hpp \
+		../CellPro/include/cg/Protein.hpp \
 		../gro-master/Defines.h \
 		../gro-master/Utility.h \
 		../gro-master/Theme.h \

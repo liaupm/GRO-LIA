@@ -1,0 +1,36 @@
+#Select OS
+ifeq ($(OS),Windows_NT)
+    OS_NAME=windows
+    COMPILER=g++
+else
+    UNAME_S := $(shell uname -s)
+    ifeq ($(UNAME_S),Linux)
+        OS_NAME=linux
+        COMPILER=g++
+    endif
+    ifeq ($(UNAME_S),Darwin)
+        OS_NAME=osx
+        COMPILER=clang++
+    endif
+endif
+
+MODE_FLAGS=-O3
+INCLUDE=-Iinclude
+TEMP=temp
+BUILD=.
+
+OBJECTS=$(TEMP)/Protein.o $(TEMP)/Gene.o $(TEMP)/Promoter.o $(TEMP)/Operon.o $(TEMP)/Plasmid.o $(TEMP)/PlasmidPool.o $(TEMP)/Genome.o
+
+CPP=$(COMPILER) -std=c++11 -Wall -c $(MODE_FLAGS) $(INCLUDE) -o
+AR = ar -rs
+
+all:
+	$(CPP) $(TEMP)/Protein.o src/cg/Protein.cpp
+	$(CPP) $(TEMP)/Gene.o src/cg/Gene.cpp
+	$(CPP) $(TEMP)/Promoter.o src/cg/Promoter.cpp
+	$(CPP) $(TEMP)/Operon.o src/cg/Operon.cpp
+	$(CPP) $(TEMP)/Plasmid.o src/cg/Plasmid.cpp
+	$(CPP) $(TEMP)/PlasmidPool.o src/cg/PlasmidPool.cpp
+	$(CPP) $(TEMP)/Genome.o src/cg/Genome.cpp
+
+	$(AR) $(BUILD)/libcellgene.a $(OBJECTS)

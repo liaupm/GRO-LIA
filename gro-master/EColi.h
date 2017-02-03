@@ -28,7 +28,7 @@ class EColi : public Cell {
 
  public:
   EColi ( World * w, float x, float y, float a );
-  EColi ( World * w, ceBody* body );
+  EColi ( World * w, ceBody* body , cg::Genome* genome );
 
 #ifndef NOGUI
   void render ( Theme * theme, GroPainter * painter );
