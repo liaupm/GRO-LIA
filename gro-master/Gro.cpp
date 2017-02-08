@@ -843,14 +843,17 @@ Value * assign_operons_to_plasmids (std::list<Value *> * args, Scope * s ) {
             }
         }
 
-        float rateOn = 0.0, rateOff = 0.0;
-        if(it.second.promoter.noise[2] != 0)
+        float rateOn = 0.0f, rateOff = 0.0f;
+        if(it.second.promoter.noise[2] != 0.0f)
         {
-            rateOn = -log(1-(it.second.promoter.noise[0]))/it.second.promoter.noise[2];
-            rateOff = -log(1-(it.second.promoter.noise[1]))/it.second.promoter.noise[2];
+            if(it.second.promoter.noise[0] != 0.0f)
+                rateOn = -log(1-(it.second.promoter.noise[0]))/it.second.promoter.noise[2];
+            if(it.second.promoter.noise[1] != 0.0f)
+                rateOff =-log(1-(it.second.promoter.noise[1]))/it.second.promoter.noise[2];
+
         }
 
-        cg::Promoter P0(mask, values, it.second.promoter.gate, cg::Promoter::BreakingState::NOT_BROKEN, std::numeric_limits<float>::infinity(), std::numeric_limits<float>::infinity());
+        cg::Promoter P0(mask, values, it.second.promoter.gate, cg::Promoter::BreakingState::NOT_BROKEN, 1.0f / rateOn, 1.0f / rateOff);
 
         std::vector<std::string>& gene_names = it.second.output_protein_names;
         //A partir del numero de genes, se crean y leen los tiempos y vars y se van colocando en el vector genes que
@@ -2489,8 +2492,9 @@ Value * gro_dump_multiple(std::list<Value *> * args, Scope * s){
             {
                 regulation = true;
             }
-            mask |= world->getPlasmidPool()->getProteinByName(protein_name)->getID();
-            values |= (mask & regulation);
+            uint64_t id = world->getPlasmidPool()->getProteinByName(protein_name)->getID();
+            mask |= id;
+            values |= (id * regulation);
         }
         counts[j] += world->check_gen_cond_pop({mask, values});
         j++;
@@ -3043,6 +3047,7 @@ void register_gro_functions ( void ) {
   register_ccl_function ( "create_dirs",    create_dirs );
 
   register_ccl_function ( "dump_single", gro_dump_single );
+  register_ccl_function ( "dump_single_reduced", gro_dump_single_reduced );
   register_ccl_function ( "dump_multiple", gro_dump_multiple );
   register_ccl_function ( "dump_multiple_plasmids", gro_dump_multiple_plasmids );
 

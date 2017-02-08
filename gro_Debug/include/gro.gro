@@ -46,6 +46,7 @@ internal real stats ( string ) "stats";
 internal unit snapshot ( string ) "snapshot";
 internal unit dump ( int ) "dump";
 internal unit dump_single ( int ) "dump_single";
+internal unit dump_single_reduced ( int ) "dump_single_reduced";
 internal unit dump_multiple ( ... ) "dump_multiple";
 internal unit dump_multiple_plasmids ( ... ) "dump_multiple_plasmids";
 internal real time() "time";
@@ -146,13 +147,13 @@ internal unit set ( string, real ) "set";
 // default global parameters
 set ( "dt", 0.02 );
 set ( "gfp_saturation_min", 0.0 );
-set ( "gfp_saturation_max", 250.0 );
+set ( "gfp_saturation_max", 200.0 );
 set ( "rfp_saturation_min", 0.0 );
-set ( "rfp_saturation_max", 250.0 );
+set ( "rfp_saturation_max", 200.0 );
 set ( "yfp_saturation_min", 0.0 );
-set ( "yfp_saturation_max", 250.0 );
+set ( "yfp_saturation_max", 200.0 );
 set ( "cfp_saturation_min", 0.0 );
-set ( "cfp_saturation_max", 250.0 );
+set ( "cfp_saturation_max", 200.0 );
 
 set ( "chemostat_width",  200 );
 set ( "chemostat_height", 200 );

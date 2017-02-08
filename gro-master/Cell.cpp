@@ -944,14 +944,16 @@ void Cell::s_absorb_cross_feeding_signal_from_list(std::list<std::string> ls)
 
 int Cell::check_gen_condition(std::vector<uint64_t> cond)
 {
-    int result = 1;
-    bool t = false;
-    uint64_t cell_proteins = genome.getProteins();
+    int result = 0;
 
-    if(cond.at(0) & cond.at(1) != cond.at(0) & cell_proteins)
+    uint64_t input = cond.at(1) ^ ~genome.getProteins();
+    uint64_t gateValue = (cond.at(0) & input);
+
+    if(gateValue == cond.at(0))
     {
-        result = 0;
+        result = 1;
     }
+
     return result;
 }
 
