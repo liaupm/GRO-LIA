@@ -135,7 +135,7 @@ win32 {
   }
 
   INCLUDEPATH += ../ccl-master/ ../CellEngine/include/ ../CellNutrient/include/ ../cellsignals/include/ ../CellPro/include
-  QMAKE_POST_LINK = copy ..\GRO\include\*.* ..\..\;
+  #QMAKE_POST_LINK = copy ..\GRO\include\*.* ..\..\;
 }
 
 QMAKE_EXTRA_TARGETS += makelinks

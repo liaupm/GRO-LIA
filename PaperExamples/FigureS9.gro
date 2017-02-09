@@ -1,0 +1,79 @@
+include gro
+set ( "dt", 0.1 );
+set ( "population_max", 2000000 );
+
+set ("signals", 1.0);
+set ("signals_draw", 1.0);
+
+grid("continuous", "gro_original", 10, 10, 8);
+iptg1 := s_signal([kdiff := 1.0, kdeg:= 0.0001]);
+
+
+genes([	name := "LacIM1Operon",
+		proteins := {"LacIM1"},
+		promoter := [function := "NOT", transcription_factors := {"ip1"}],
+		prot_act_times := [times := {8.0}, variabilities := {2.5}],
+		prot_deg_times := [times := {5.0}, variabilities := {1.0}]
+	]);
+
+genes([	name := "Cargo1Operon",
+		proteins := {"Rel1", "GFP"},
+		promoter := [function := "NOT", transcription_factors := {"LacIM1"}],
+		prot_act_times := [times := {20.0, 20.0}, variabilities := {6.0, 6.0}],
+		prot_deg_times := [times := {10.0, 5.0}, variabilities := {2.0, 1.0}]
+	]);
+	
+genes([	name := "LacIOperon",
+		proteins := {"LacI"},
+		promoter := [function := "NOT", transcription_factors := {"ip2"}],
+		prot_act_times := [times := {10.0}, variabilities := {3.0}],
+		prot_deg_times := [times := {3.0}, variabilities := {0.5}]
+	]);
+	
+genes([	name := "TetOperon",
+		proteins := {"TetR"},
+		promoter := [function := "NOT", transcription_factors := {"LacI"}],
+		prot_act_times := [times := {15.0}, variabilities := {4.5}],
+		prot_deg_times := [times := {6.0}, variabilities := {1.5}]
+	]);
+	
+genes([	name := "Cargo2Operon",
+		proteins := {"Rel2", "RFP"},
+		promoter := [function := "NOT", transcription_factors := {"TetR"}],
+		prot_act_times := [times := {20.0, 20.0}, variabilities := {6.0, 6.0}],
+		prot_deg_times := [times := {10.0, 5.0}, variabilities := {2.0, 1.0}]
+	]);
+
+plasmids_genes([ p1 := {"LacIM1Operon", "Cargo1Operon"},
+				 p2 := {"LacIOperon", "TetOperon", "Cargo2Operon"}]);
+
+//Actions
+action({"Rel1"}, "conjugate", {"p1","1.0"});
+action({"GFP"}, "d_paint", {"1","0","0","0"});
+action({"-GFP"}, "d_paint", {"-1","0","0","0"});
+action({"Rel2"}, "conjugate", {"p2","1.0"});
+action({"RFP"}, "d_paint", {"0","1","0","0"});
+action({"-RFP"}, "d_paint", {"0","-1","0","0"});
+action({}, "s_get_QS", {tostring(iptg1), ">", "0.1", "ip1"});
+action({}, "s_get_QS", {tostring(iptg1), ">", "0.00003", "ip2"});
+//action({}, "s_get_QS", {tostring(iptg1), ">", "0.0", "ip1"});
+//action({}, "s_get_QS", {tostring(iptg1), ">", "0.0", "ip2"});
+
+
+//Programs
+program p() :=
+{
+	skip();
+};               
+
+program main() := {
+	
+	true: 
+	{
+		s_set_signal(iptg1, 10, 0, 0);
+	}
+	
+	c_ecolis(200, 0, 0, 300, {"p1"}, program p());
+	c_ecolis(200, 0, 0, 300, {"p2"}, program p());
+	c_ecolis(400, 0, 0, 300, {}, program p());
+};

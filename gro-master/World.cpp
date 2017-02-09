@@ -59,11 +59,10 @@ World::World ( GroThread *ct ) : calling_thread ( ct ) , plasmidCloud(std::rando
     proteins = new std::map<std::string, std::vector<float>>;
     operons = new std::map<std::string, operon_data>;
 
-    output_started = false;
-    output_started2 = false;
-
     set_sim_dt ( DEFAULT_SIM_DT );
     set_chip_dt ( DEFAULT_CHIP_DT );
+
+    output_started = false;
 
 }
 
@@ -328,6 +327,27 @@ void World::restart ( void ) {
     }
 
     delete population;
+
+    /* OBSERVE THIS! MAYBE NEEDED! */
+
+    proteins->clear();
+    operons->clear();
+    num_actions = 0;
+    remove_all_actions();
+    //action_info.clear();
+    //map_actions.clear();
+    signal_concs.clear();
+    s_signal_id = 0;
+    noprot = true;
+    noaction = true;
+
+    if(get_param("signals") == 1.0)
+    {
+        delete handler;
+    }
+
+    //prog->destroy(this);
+    /**/
 
     unsigned int k;
     for ( k=0; k<signal_list.size(); k++ ) {
@@ -909,6 +929,8 @@ ceVector2 World::chemostat_flow ( float, float y, float mag ) {
 
 void World::update ( void ) {
 
+
+
     ceStep(space);
 
     std::vector<Cell *>::iterator j;
@@ -1057,6 +1079,7 @@ void World::update ( void ) {
     //cout << "Pase!!! Ah espera... no, no toca eso: " << (*population)[0]->get_id() << endl;
 
     //randomize_population();
+
 
 }
 

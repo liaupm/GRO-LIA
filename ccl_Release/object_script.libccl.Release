@@ -1,0 +1,21 @@
+CREATE release\libccl.a
+ADDMOD release\TypeCheck.o
+ADDMOD release\Type.o
+ADDMOD release\SymbolTable.o
+ADDMOD release\Symbol.o
+ADDMOD release\Scope.o
+ADDMOD release\Schedulers.o
+ADDMOD release\Program.o
+ADDMOD release\List.o
+ADDMOD release\Internals.o
+ADDMOD release\Expr.o
+ADDMOD release\Eval.o
+ADDMOD release\Debug.o
+ADDMOD release\Clause.o
+ADDMOD release\App.o
+ADDMOD release\Normal.o
+ADDMOD release\Hill.o
+ADDMOD release\Rands.o
+ADDMOD release\lexer.o
+ADDMOD release\parser.o
+SAVE

@@ -1,0 +1,25 @@
+include gro
+set("dt", 0.1);
+set("population_max", 9000);
+
+
+//CellNutrient Library Sets//
+
+set ("nutrients", 1.0);
+set ("nutrient_amount", 45.0); 
+set ("nutrient_consumption_rate", 0.16);
+set ("nutrient_grid_length", 10.0); 
+set ("nutrient_grid_cell_size", 30.0); 
+set ("nutrient_consumption_mode", 0.0);
+
+
+program p() :=
+{
+		skip();
+};
+
+program main() :=
+{
+    c_ecolis(1, 0, 0, 0, {}, program p());
+};
+ 

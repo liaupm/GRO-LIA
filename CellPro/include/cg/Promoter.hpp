@@ -57,8 +57,8 @@ namespace cg
     , proteinValues(proteinValues)
     , gate(gate)
     , breakingState(breakingState)
-    , breakingToTrueTimeDistribution(1.0f / breakingToTrueRate)
-    , breakingToFalseTimeDistribution(1.0f / breakingToFalseRate)
+    , breakingToTrueTimeDistribution(1.0f/breakingToTrueRate)
+    , breakingToFalseTimeDistribution(1.0f/breakingToFalseRate)
     {
     }
 

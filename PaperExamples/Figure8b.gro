@@ -1,0 +1,134 @@
+include gro
+set ("dt", 0.1);
+set ("population_max", 80000);
+
+//CellSignals settings
+set ("signals",1.0);
+set ("signals_draw", 0.0);
+
+//Kdiff, Kdeg, emit, absorb
+grid("continuous", "gro_original", 10, 10, 8);
+s1 := s_signal([kdiff := 0.42, kdeg := 0.005]);
+s2 := s_signal([kdiff := 0.42, kdeg := 0.005]);
+s3 := s_signal([kdiff := 0.42, kdeg := 0.005]);
+
+
+genes([    name := "IAMP1",
+           proteins := {"iamp1"},
+           promoter := [function := "TRUE"],
+           prot_act_times := [times := {0.0}, variabilities := {0.0}],
+           prot_deg_times := [times := {1000.0}, variabilities := {100.0}]]);
+
+genes([    name := "IAMP2",
+           proteins := {"iamp2"},
+           promoter := [function := "TRUE"],
+           prot_act_times := [times := {0.0}, variabilities := {0.0}],
+           prot_deg_times := [times := {1000.0}, variabilities := {100.0}]]);
+
+genes([    name := "IAMP3",
+           proteins := {"iamp3"},
+           promoter := [function := "TRUE"],
+           prot_act_times := [times := {0.0}, variabilities := {0.0}],
+           prot_deg_times := [times := {1000.0}, variabilities := {100.0}]]);
+           
+genes([    name := "OperonProd1",
+           proteins := {"prod1", "rfp"},
+           promoter := [function := "TRUE"],
+           prot_act_times := [times := {30.1, 20.0}, variabilities := {3.0, 1.5}],
+           prot_deg_times := [times := {1000.0, 10.0}, variabilities := {100.0, 1.0}]]);
+
+genes([    name := "OperonProd2",
+           proteins := {"prod2", "yfp"},
+           promoter := [function := "YES",
+           transcription_factors := {"ahl1"}],
+           prot_act_times := [times := {30.1, 20.0}, variabilities := {3.0, 1.5}],
+           prot_deg_times := [times := {1000.0, 10.0}, variabilities := {100.0, 1.0}]]);
+           
+genes([    name := "OperonProd3",
+           proteins := {"prod3", "gfp"},
+           promoter := [function := "YES",
+           transcription_factors := {"ahl2"}],
+           prot_act_times := [times := {30.1, 20.0}, variabilities := {3.0, 1.5}],
+           prot_deg_times := [times := {1000.0, 10.0}, variabilities := {100.0, 1.0}]]);
+           
+genes([    name := "OperonDie1",
+           proteins := {"die1"},
+           promoter := [function := "YES",
+           transcription_factors := {"ahl1"}],
+           prot_act_times := [times := {30.0}, variabilities := {2.0}],
+           prot_deg_times := [times := {1000.0}, variabilities := {1.0}]]);
+           
+genes([    name := "OperonDie2",
+           proteins := {"die2"},
+           promoter := [function := "YES",
+           transcription_factors := {"ahl2"}],
+           prot_act_times := [times := {30.0}, variabilities := {2.0}],
+           prot_deg_times := [times := {1000.0}, variabilities := {1.0}]]);
+
+genes([    name := "OperonDie3",
+           proteins := {"die3"},
+           promoter := [function := "YES",
+           transcription_factors := {"ahl3"}],
+           prot_act_times := [times := {30.0}, variabilities := {2.0}],
+           prot_deg_times := [times := {1000.0}, variabilities := {1.0}]]);
+           
+genes([		name := "OperonAhl1",
+			proteins := {"ahl1"},
+			promoter := [function := "SIGNAL"],
+			prot_act_times := [times := {0.1}, variabilities := {0.0}],
+			prot_deg_times := [times := {1.0}, variabilities := {0.0}]]);
+
+genes([		name := "OperonAhl2",
+			proteins := {"ahl2"},
+			promoter := [function := "SIGNAL"],
+			prot_act_times := [times := {0.1}, variabilities := {0.0}],
+			prot_deg_times := [times := {1.0}, variabilities := {0.0}]]);
+
+genes([		name := "OperonAhl3",
+			proteins := {"ahl3"},
+			promoter := [function := "SIGNAL"],
+			prot_act_times := [times := {0.1}, variabilities := {0.0}],
+			prot_deg_times := [times := {1.0}, variabilities := {0.0}]]);
+           
+plasmids_genes ([ p1 := {"OperonProd1", "OperonDie1", "IAMP1", "OperonAhl1"},
+                  p2 := {"OperonProd2", "OperonDie2", "IAMP2", "OperonAhl1", "OperonAhl2"},
+                  p3 := {"OperonProd3", "OperonDie3", "IAMP3", "OperonAhl2", "OperonAhl3"}]);
+		  	  
+
+//Actions
+action({"iamp1"},"set_growth_rate",{"0.017"});
+action({"iamp2"},"set_growth_rate",{"0.017"});
+action({"iamp3"},"set_growth_rate",{"0.017"});
+action({"prod1"},"s_emit_signal",{tostring(s1),"2", "exact"});
+action({"die1"},"lose_plasmid",{"p1"});
+action({"-rfp"},"d_paint",{"0","-1","0","0"});
+action({"ahl1","prod2"},"s_emit_signal",{tostring(s2),"2", "exact"});
+action({"die2"},"lose_plasmid",{"p2"});
+action({"-yfp"},"d_paint",{"0","0","-1","0"});
+action({"ahl2","prod3"},"s_emit_signal",{tostring(s3),"2", "exact"});
+action({"die3"},"lose_plasmid",{"p3"});
+action({"-gfp"},"d_paint",{"-1","0","0","0"});
+action({"iamp1"},"s_get_QS",{tostring(s1),">","0.1","ahl1"});
+action({"iamp2"},"s_get_QS",{tostring(s1),">","0.1","ahl1"});
+action({"iamp2"},"s_get_QS",{tostring(s2),">","0.1","ahl2"});
+action({"iamp3"},"s_get_QS",{tostring(s2),">","0.1","ahl2"});
+action({"iamp3"},"s_get_QS",{tostring(s3),">","0.1","ahl3"});
+action({"rfp","-die1"},"d_paint",{"0","1","0","0"});
+action({"yfp","-die2"},"d_paint",{"0","0","1","0"});
+action({"gfp","-die3"},"d_paint",{"1","0","0","0"});
+
+
+//Programs
+program p() := 
+{
+    skip();
+};
+
+
+program main() :=
+{ 
+   c_ecolis(300, 0, 0, 100, {"p1"}, program p());
+   c_ecolis(300, 0, 0, 100, {"p2"}, program p());
+   c_ecolis(300, 0, 0, 100, {"p3"}, program p());
+     
+};

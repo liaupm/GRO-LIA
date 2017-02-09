@@ -536,10 +536,11 @@ Value *new_operon (std::list<Value *> * args, Scope * s )
                         }
 
                     }
-                    op_data.promoter.noise = {onNoise, offNoise, noiseTime};
+
                     //noise
 
                 }
+                op_data.promoter.noise = {onNoise, offNoise, noiseTime}; //esta linea ha cambiado de lugar
             }
         }
 
@@ -862,6 +863,7 @@ Value * assign_operons_to_plasmids (std::list<Value *> * args, Scope * s ) {
 
         for(unsigned int i = 0; i < gene_names.size(); ++i)
         {
+
             cg::Gene g(world->getPlasmidPool()->getProteinByName(it.second.output_protein_names[i]), it.second.act_times[i], it.second.act_vars[i]);
             genes.push_back(g);
         }
@@ -2394,32 +2396,12 @@ Value * gro_dump_single_reduced (std::list<Value *> * args, Scope * s ) {
     std::list<Value *>::iterator i = args->begin();
     int index = (*i)->int_value(); i++;
 
-    /*std::vector<std::string> names = it->second->promoter.names;
-    std::vector<bool> regulations = it->second->promoter.regulation;
-    uint64_t mask = 0, mask_unique = 0;
-    uint64_t values = 0, values_unique = 0;
-    for(unsigned int i = 0; i < names.size(); ++i)
-    {
-        uint64_t id = world->getPlasmidPool()->getProteinByName(names[i])->getID();
-        uint64_t value = id * regulations[i];
-        mask |= id;
-        values |= value;
-        if(i == 0)
-        {
-           mask_unique |= id;
-           values_unique |= value;
-        }
-    }*/
-
     std::vector<std::string> prot_names;
 
     for(auto it : *(world->get_protein_map()))
     {
         prot_names.push_back(it.first);
     }
-
-    //REVISAR ESTO. Mejor quizas hacer un internal proteins global y consultar por ese en la bacteria que estoy mirando.
-    //Idea: Hacer un mapa de cada plasmidList de todas las proteinas (activas e inactivas) y luego las misma operacion global.
 
     char time[5];
     char equis[2];
@@ -2495,7 +2477,7 @@ Value * gro_dump_multiple(std::list<Value *> * args, Scope * s){
             uint64_t id = world->getPlasmidPool()->getProteinByName(protein_name)->getID();
             mask |= id;
             values |= (id * regulation);
-        }
+         }
         counts[j] += world->check_gen_cond_pop({mask, values});
         j++;
         mask = 0;

@@ -1,0 +1,30 @@
+include gro
+set ("dt", 0.1);
+set ("population_max", 5000000);
+
+genes([    name := "Operon1",
+           proteins := {"gen1"},
+           promoter := [function := "TRUE"],
+           prot_act_times := [times := {8.0}, variabilities := {4.0}],
+           prot_deg_times := [times := {0.1}, variabilities := {0.0}]]);
+
+plasmids_genes ([ p1 := {"Operon1"} ]);
+
+
+//Actions
+action({"-gen1"},"d_paint",{"0","0","0","5"});
+action({"gen1"},"paint",{"0","0","0","0"});// Plasmid paints bacteria green
+action({"gen1"},"conjugate",{"p1","0.3"});//Conjugation with gamma
+action({"gen1"},"set_growth_rate",{"0.01575"});//ln(2)/gt(min)[ft/min]
+
+//Programs 
+program p() :=
+{
+    set ("ecoli_growth_rate", 0.01732);
+};
+
+program main() :=
+{
+   c_ecolis(8, 0, 0, 100, {"p1"}, program p()); //Plasmid host Bacteria
+   c_ecolis(152, 0, 0, 100, {}, program p()); //plasmid-free bacteria
+};

@@ -1,0 +1,140 @@
+include gro
+
+nos_theme := [
+
+  background := "#ffffff",
+  ecoli_edge := "#777777",
+  ecoli_selected := "#ff0000",
+
+  signals := {
+    { 1, 1, 1 },
+    { 0, 0, 0 },
+    { 0, 0, 0 },
+    { 0, 0, 0 },
+    { 0, 0, 0 },
+    { 0, 0, 0 }
+  },
+
+  chemostat := "#999999",
+  message := "#999999",
+  mouse := "#000000"
+
+];
+
+set_theme (nos_theme);
+
+set ("dt", 0.1);
+set ("population_max", 2000000);
+set ("ecoli_growth_rate", 0.017);
+
+fun rand_val mean var .
+  if rand(2) = 0
+    then (mean - (rand(100*var)/100))
+    else (mean + (rand(100*var)/100))
+  end;
+  
+fun gt x . 0.5 < x;
+
+arabinose := signal(0.8, 0.005);
+
+program p() :=
+{
+    
+    prots := [gfp := false];
+    act_mean_times := [gfp := 15];
+    var_act_times := [gfp := 6];
+    final_act_times := [gfp := 0.0];
+    deg_mean_times := [gfp := 100.0];
+    var_deg_times := [gfp := 1.0];
+    final_deg_times := [gfp := 0.0];
+    
+    gfp := 0;
+    cfp := 0;
+    rfp := 0;
+    init := false;
+    broken_on := false;
+    broken_off := false;
+    t_gfp_act := 0;
+    t_gfp_deact := 0;
+    
+    !init:
+    {
+    	final_act_times.gfp := rand_val (act_mean_times.gfp) (var_act_times.gfp);
+    	final_deg_times.gfp := rand_val (deg_mean_times.gfp) (var_deg_times.gfp);
+    	init := true;
+    }
+    
+    rate(0.000125) & !broken_off:
+    {
+    	broken_on := true;
+    }
+    
+    rate(0.000125) & !broken_on:
+    {
+    	broken_off := true;
+    }
+    
+    gt(get_signal(arabinose)) & !broken_off & !broken_on:
+    {
+    	t_gfp_act := t_gfp_act + dt;
+    }
+    
+    !gt(get_signal(arabinose)) & !broken_off & !broken_on:
+    {
+    	t_gfp_deact := t_gfp_deact + dt;
+    }
+    
+    t_gfp_act >= final_act_times.gfp & gt(get_signal(arabinose)) & !broken_off & !broken_on:
+    {
+    	prots.gfp := true;
+    	t_gfp_act := 0;
+    	t_gfp_deact := 0;
+    }
+    
+    t_gfp_deact >= final_deg_times.gfp & !gt(get_signal(arabinose)) & !broken_off & !broken_on:
+    {
+    	prots.gfp := false;
+    	t_gfp_act := 0;
+    	t_gfp_deact := 0;
+    }
+    
+    prots.gfp & !broken_off & !broken_on:
+    {
+    	gfp := gfp+1;
+    }
+    
+    !prots.gfp & gfp > 0 & !broken_off & !broken_on:
+    {
+    	gfp := gfp-1;
+    }
+    
+    broken_off & gfp > 0:
+    {
+    	gfp := gfp-1;
+    }
+    
+    broken_on:
+    {
+    	gfp := gfp+1;
+    }
+    
+};
+
+
+program main() :=
+{
+
+    true:
+	{
+        set_signal(arabinose,0,0,20);
+	}
+	
+   	foreach q in range 100 do
+   	ecoli ([
+   				x := rand(160) - 80,
+   				y := rand(160) - 80,
+   				theta := 0.01*rand(314)],
+   				program p())
+    end;
+   	
+};

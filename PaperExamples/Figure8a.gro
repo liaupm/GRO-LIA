@@ -1,0 +1,149 @@
+include gro
+set ( "dt", 0.1 );
+set ( "population_max", 2000000 );
+
+t := 0;
+
+//Cellsignals settings
+set ("signals", 1.0); //0.0: off, 1.0: on
+set ("signals_draw", 0.0);
+grid("continuous", "gro_original", 10, 10, 8);
+ip := s_signal([kdiff := 0.8, kdeg := 0.0001]);
+s1 := s_signal([kdiff := 0.02, kdeg := 0.005]);
+
+
+genes([    name := "IAMP1",
+           proteins := {"iamp1"},
+           promoter := [function := "TRUE"],
+           prot_act_times := [times := {0.0}, variabilities := {0.0}],
+           prot_deg_times := [times := {1000.0}, variabilities := {100.0}]
+     ]);
+
+genes([    name := "IAMP2",
+           proteins := {"iamp2"},
+           promoter := [function := "TRUE"],
+           prot_act_times := [times := {0.0}, variabilities := {0.0}],
+           prot_deg_times := [times := {1000.0}, variabilities := {100.0}]
+     ]);
+
+genes([	   name := "IAMP3",
+           proteins := {"iamp3"},
+           promoter := [function := "TRUE"],
+           prot_act_times := [times := {0.0}, variabilities := {0.0}],
+           prot_deg_times := [times := {1000.0}, variabilities := {100.0}]
+     ]);
+
+genes([	name := "LacIOperon",
+		proteins := {"LacI"},
+		promoter := [function := "NOT",
+		transcription_factors := {"iptg"}],
+		prot_act_times := [times := {3.0}, variabilities := {1.0}],
+		prot_deg_times := [times := {33.0}, variabilities := {3.0}]
+	]);
+
+genes([	name := "Cargo1Operon",
+		proteins := {"Conj1","Prod1","RFP"},
+		promoter := [function := "NOT", transcription_factors := {"LacI"}],
+		prot_act_times := [times := {20.0, 20.0, 10.0}, variabilities := {6.0, 6.0, 5.0}],
+		prot_deg_times := [times := {0.1, 0.1, 90.0}, variabilities := {6.0, 6.0, 10.0}]
+	]);
+	
+genes([	name := "Die1Operon",
+		proteins := {"die1"},
+		promoter := [function := "YES", transcription_factors := {"LacI"}],
+		prot_act_times := [times := {6.1}, variabilities := {2.0}],
+		prot_deg_times := [times := {1000.1}, variabilities := {0.0}]
+	]);
+
+/*genes([	name := "LacILasOperon",
+		proteins := {"LacII"},
+		promoter := [function := "NOT",
+		transcription_factors := {"iptg"}],
+		prot_act_times := [times := {3.0}, variabilities := {1.0}],
+		prot_deg_times := [times := {33.0}, variabilities := {3.0}]
+	]); */
+	
+genes([	name := "Cargo2Operon",
+		proteins := {"Conj2","Prod2","YFP"},
+		promoter := [function := "TRUE"],
+		prot_act_times := [times := {20.0, 20.0, 10.0}, variabilities := {6.0, 6.0, 5.0}],
+		prot_deg_times := [times := {0.1, 0.1, 90.0}, variabilities := {0.0, 0.0, 10.0}]
+	]);
+	
+/*genes([	name := "Die2Operon",
+		proteins := {"die2"},
+		promoter := [function := "YES", transcription_factors := {"iptg"}],
+		prot_act_times := [times := {6.1}, variabilities := {2.0}],
+		prot_deg_times := [times := {1000.1}, variabilities := {0.0}]
+	]);*/
+	
+genes([	name := "Die2Operon",
+		proteins := {"die2"},
+		promoter := [function := "NOT", transcription_factors := {"LacI"}],
+		prot_act_times := [times := {6.1}, variabilities := {2.0}],
+		prot_deg_times := [times := {1000.1}, variabilities := {0.0}]
+	]);
+	
+genes([	name := "Cargo3Operon",
+		proteins := {"Conj3","Prod3","GFP"},
+		promoter := [function := "TRUE"],
+		prot_act_times := [times := {20.0, 20.0, 10.0}, variabilities := {6.0, 6.0, 5.0}],
+		prot_deg_times := [times := {0.1, 0.1, 90.0}, variabilities := {0.0, 0.0, 10.0}]
+	]);
+
+genes([	name := "Die3Operon",
+		proteins := {"die3"},
+		promoter := [function := "YES", transcription_factors := {"ahl1"}],
+		prot_act_times := [times := {6.1}, variabilities := {2.0}],
+		prot_deg_times := [times := {1000.1}, variabilities := {0.0}]
+	]);
+					 
+plasmids_genes([ phigh := {"IAMP1", "LacIOperon", "Cargo1Operon", "Die1Operon"},
+				 //pmid := {"IAMP2", "LacILasOperon", "Cargo2Operon", "Die2Operon"},
+				 pmid := {"IAMP2", "LacIOperon", "Cargo2Operon", "Die2Operon"},
+				 plow := {"IAMP3", "Cargo3Operon", "Die3Operon"}]);
+
+//Actions
+action({"iamp1"},"set_growth_rate",{"0.017"});
+action({"iamp2"},"set_growth_rate",{"0.017"});
+action({"iamp3"},"set_growth_rate",{"0.025"});
+action({"Conj1"},"conjugate",{"phigh","0.1"});
+action({"Prod1"},"s_emit_signal",{tostring(s1),"1.0", "exact"});
+action({"RFP"},"paint",{"16","120","0","0"});
+action({"-RFP"},"d_paint",{"0","-1","0","0"});
+action({"die1"},"die");
+action({"Conj2"},"conjugate",{"pmid","0.1"});
+action({"Prod2"},"s_emit_signal",{tostring(s1),"1.0", "exact"});
+action({"YFP"},"paint",{"100","180","0","0"});
+action({"-YFP"},"d_paint",{"0","0","-1","0"});
+action({"die2"},"die");
+action({"iamp3"},"s_absorb_QS",{tostring(s1),">","0.1","ahl1"});
+action({"Conj3"},"conjugate",{"plow","0.1"});
+action({"GFP"},"paint",{"212","26","0","0"});
+action({"-GFP"},"d_paint",{"-1","0","0","0"});
+action({"die3"},"die");
+action({"iamp1"},"s_get_QS",{tostring(ip),">","0.7","iptg"});
+action({"iamp2"},"s_get_QS",{tostring(ip),">","0.7","iptg"});
+action({"iamp3"},"s_get_QS",{tostring(ip),">","0.7","iptg"});
+
+//Programs
+program p() :=
+{
+	skip();
+};
+
+program main() := {
+	
+	true: 
+	{ 
+		t := t+dt;
+		s_set_signal(ip, 10, 0, 0);
+	}	
+	
+	c_ecolis(150, 0, 0, 200, {"phigh"}, program p());
+	c_ecolis(200, 0, 0, 400, {"pmid"}, program p());
+	c_ecolis(300, 0, 0, 600, {"plow"}, program p());
+	/*c_ecolis(300, 0, 0, 600, {"phigh"}, program p());
+	c_ecolis(150, 0, 0, 600, {"pmid"}, program p());
+	c_ecolis(300, 0, 0, 600, {"plow"}, program p());*/
+};

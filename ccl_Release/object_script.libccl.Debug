@@ -1,0 +1,21 @@
+CREATE debug\libccl.a
+ADDMOD debug\TypeCheck.o
+ADDMOD debug\Type.o
+ADDMOD debug\SymbolTable.o
+ADDMOD debug\Symbol.o
+ADDMOD debug\Scope.o
+ADDMOD debug\Schedulers.o
+ADDMOD debug\Program.o
+ADDMOD debug\List.o
+ADDMOD debug\Internals.o
+ADDMOD debug\Expr.o
+ADDMOD debug\Eval.o
+ADDMOD debug\Debug.o
+ADDMOD debug\Clause.o
+ADDMOD debug\App.o
+ADDMOD debug\Normal.o
+ADDMOD debug\Hill.o
+ADDMOD debug\Rands.o
+ADDMOD debug\lexer.o
+ADDMOD debug\parser.o
+SAVE
