@@ -336,7 +336,7 @@ Value *new_operon (std::list<Value *> * args, Scope * s )
 
     ASSERT ( args->size() == 1);
 
-    cg::Promoter::Gate gate;
+    cg::Promoter::Gate gate = cg::Promoter::Gate::AND;;
     int counter = 0;
     //int which_riboswitch = 0;
     std::list<Value *>::iterator i = args->begin();

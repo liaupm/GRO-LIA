@@ -17,13 +17,8 @@ genes([		name := "OperonGfp",
 			prot_act_times := [times := {15.0}, variabilities := {2.0}],
 			prot_deg_times := [times := {1.0}, variabilities := {0.0}]]);
 			
-genes([		name := "OperonAraC",
-			proteins := {"arac"},
-			promoter := [function := "SIGNAL"],
-			prot_act_times := [times := {0.1}, variabilities := {0.0}],
-			prot_deg_times := [times := {1.0}, variabilities := {0.0}]]);
-			
-plasmids_genes ([ pYES := {"OperonGfp", "OperonAraC"}]);
+plasmids_genes ([ pYES := {"OperonGfp"}]);
+
 
 //Actions
 action({"gfp"},"d_paint",{"1","0","0","0"});
