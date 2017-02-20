@@ -6,7 +6,7 @@ This version of GRO was developed at the LIA-UPM lab atop the original version, 
 
 * This repository holds the latest developer's version of GRO at LIA-UPM.
 * The current version is 1.0
-[comment:] <> (* [Learn Markdown](https://bitbucket.org/tutorials/markdowndemo))
+[//]: # (* [Learn Markdown](https://bitbucket.org/tutorials/markdowndemo))
 
 ### How do I get set up? ###
 
