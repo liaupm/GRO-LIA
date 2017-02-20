@@ -1,11 +1,11 @@
 # README #
 
-This version of GRO was developed at the LIA-UPM lab on the original version, created by Eric Klavins at University of Washington.
+This version of GRO was developed at the LIA-UPM lab atop the original version, created by Eric Klavins at University of Washington.
 
 ### What is this repository for? ###
 
-* Quick summary
-* Version
+* This repository holds the latest developer's version of GRO at LIA-UPM.
+* The current version is 1.0
 * [Learn Markdown](https://bitbucket.org/tutorials/markdowndemo)
 
 ### How do I get set up? ###
