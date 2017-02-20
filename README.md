@@ -21,7 +21,8 @@ This version of GRO was developed at the LIA-UPM lab atop the original version, 
 
 * Writing tests
 * Code review
-* Other guidelines
+[//]: # * Other guidelines
+* If you find any bugs or wish to contribute, please contact martin.gutierrez@gmail.com
 
 ### Who do I talk to? ###
 
