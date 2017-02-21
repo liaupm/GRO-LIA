@@ -17,7 +17,7 @@ This version of GRO was developed at the LIA-UPM lab atop the original version, 
 [//]: # (* Database configuration)
 [//]: # (* How to run tests)
 [//]: # (* Deployment instructions)
-* Instructions for compiling - 1. Run `create_dirs.sh` (from the project directory) 2. From the same project directory run the script for compiling all modules: `modules.sh <mode>` (MacOS and Linux) or `modules-win.bat <mode>` (Windows). `<mode>` is either `debug` or `release`. 3. Open QT Creator and load both projects `ccl-master` and `gro-master`. Set the correct output of the projects to `ccl_Debug`, `ccl_Release`, `gro_Debug` and `gro_Release` respectively when setting up the projects in QT Creator. 4. Build `ccl-master`. 5. Build `gro-master`. 
+* Instructions for compiling - 1. Run `create_dirs.sh` (from the project directory) 2. From the same project directory run the script for compiling all modules: `modules.sh <mode>` (MacOS and Linux) or `modules-win.bat <mode>` (Windows). `<mode>` is either `debug` or `release`. 3. Open QT Creator and load both projects `ccl-master` and `gro-master`. Set the correct output of the projects to `ccl_Debug`, `ccl_Release`, `gro_Debug` and `gro_Release` respectively when setting up the projects in QT Creator. 4. Build `ccl-master`. 5. Build `gro-master`. 6. Upon execution of gro, check the bottom line of the window for the Working Directory (a guide is shown in the Readme in the WIN-Executable folder). Copy `standard.gro` and `gro.gro` from the `gro-master/include` folder to the Working Directory.
 
 ### Contribution guidelines ###
 
