@@ -20,7 +20,7 @@ else
 endif
 
 ifeq ($(MODE),release)
-	ifeq ($COMP), gcc)
+	ifeq ($(COMP), gcc)
 		C = gcc -Wall -O3 -c -I$(INCLUDE) -std=c99 #release
 	else
 		C = clang -Wall -O3 -c -I$(INCLUDE) -std=c11
