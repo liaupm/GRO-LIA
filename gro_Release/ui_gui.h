@@ -1,7 +1,7 @@
 /********************************************************************************
 ** Form generated from reading UI file 'gui.ui'
 **
-** Created by: Qt User Interface Compiler version 5.8.0
+** Created by: Qt User Interface Compiler version 5.7.0
 **
 ** WARNING! All changes made in this file will be lost when recompiling UI file!
 ********************************************************************************/
@@ -191,46 +191,46 @@ public:
 
     void retranslateUi(QMainWindow *Gui)
     {
-        Gui->setWindowTitle(QApplication::translate("Gui", "gro : the cell programming language", Q_NULLPTR));
-        actionStartStop->setText(QApplication::translate("Gui", "Start", Q_NULLPTR));
+        Gui->setWindowTitle(QApplication::translate("Gui", "gro : the cell programming language", 0));
+        actionStartStop->setText(QApplication::translate("Gui", "Start", 0));
 #ifndef QT_NO_TOOLTIP
-        actionStartStop->setToolTip(QApplication::translate("Gui", "Start or stop gro ", Q_NULLPTR));
+        actionStartStop->setToolTip(QApplication::translate("Gui", "Start or stop gro ", 0));
 #endif // QT_NO_TOOLTIP
-        actionStartStop->setShortcut(QApplication::translate("Gui", "Ctrl+S", Q_NULLPTR));
-        actionOpen->setText(QApplication::translate("Gui", "Open...", Q_NULLPTR));
-        actionOpen->setIconText(QApplication::translate("Gui", "Open", Q_NULLPTR));
+        actionStartStop->setShortcut(QApplication::translate("Gui", "Ctrl+S", 0));
+        actionOpen->setText(QApplication::translate("Gui", "Open...", 0));
+        actionOpen->setIconText(QApplication::translate("Gui", "Open", 0));
 #ifndef QT_NO_TOOLTIP
-        actionOpen->setToolTip(QApplication::translate("Gui", "Open a .gro file.", Q_NULLPTR));
+        actionOpen->setToolTip(QApplication::translate("Gui", "Open a .gro file.", 0));
 #endif // QT_NO_TOOLTIP
-        actionOpen->setShortcut(QApplication::translate("Gui", "Ctrl+O", Q_NULLPTR));
-        actionReload->setText(QApplication::translate("Gui", "Reload", Q_NULLPTR));
+        actionOpen->setShortcut(QApplication::translate("Gui", "Ctrl+O", 0));
+        actionReload->setText(QApplication::translate("Gui", "Reload", 0));
 #ifndef QT_NO_TOOLTIP
-        actionReload->setToolTip(QApplication::translate("Gui", "Reload current .gro file", Q_NULLPTR));
+        actionReload->setToolTip(QApplication::translate("Gui", "Reload current .gro file", 0));
 #endif // QT_NO_TOOLTIP
-        actionReload->setShortcut(QApplication::translate("Gui", "Ctrl+R", Q_NULLPTR));
-        actionStep->setText(QApplication::translate("Gui", "Step", Q_NULLPTR));
+        actionReload->setShortcut(QApplication::translate("Gui", "Ctrl+R", 0));
+        actionStep->setText(QApplication::translate("Gui", "Step", 0));
 #ifndef QT_NO_TOOLTIP
-        actionStep->setToolTip(QApplication::translate("Gui", "Simulate for one timestep", Q_NULLPTR));
+        actionStep->setToolTip(QApplication::translate("Gui", "Simulate for one timestep", 0));
 #endif // QT_NO_TOOLTIP
-        actionStep->setShortcut(QApplication::translate("Gui", "Ctrl+T", Q_NULLPTR));
-        actionHelp->setText(QApplication::translate("Gui", "Online Documentation", Q_NULLPTR));
-        actionHelp->setShortcut(QApplication::translate("Gui", "Ctrl+D", Q_NULLPTR));
-        actionAbout->setText(QApplication::translate("Gui", "About", Q_NULLPTR));
-        actionScreenshot->setText(QApplication::translate("Gui", "Save Screenshot...", Q_NULLPTR));
-        actionScreenshot->setShortcut(QApplication::translate("Gui", "Ctrl+I", Q_NULLPTR));
-        actionMoreCells->setText(QApplication::translate("Gui", "Increase Population Limit", Q_NULLPTR));
-        actionMoreCells->setShortcut(QApplication::translate("Gui", "Ctrl+M", Q_NULLPTR));
-        actionZoom_In->setText(QApplication::translate("Gui", "Zoom In", Q_NULLPTR));
-        actionZoom_In->setShortcut(QApplication::translate("Gui", "Ctrl+Shift+=", Q_NULLPTR));
-        actionZoom_Out->setText(QApplication::translate("Gui", "Zoom Out", Q_NULLPTR));
-        actionZoom_Out->setShortcut(QApplication::translate("Gui", "Ctrl+-", Q_NULLPTR));
-        actionReset_Zoom->setText(QApplication::translate("Gui", "Reset Zoom", Q_NULLPTR));
-        actionReset_Zoom->setShortcut(QApplication::translate("Gui", "Ctrl+0", Q_NULLPTR));
-        actionDump->setText(QApplication::translate("Gui", "Save Colony Information...", Q_NULLPTR));
-        menuFile->setTitle(QApplication::translate("Gui", "File", Q_NULLPTR));
-        menuSimulation->setTitle(QApplication::translate("Gui", "Simulation", Q_NULLPTR));
-        menuHelp->setTitle(QApplication::translate("Gui", "Help", Q_NULLPTR));
-        menuView->setTitle(QApplication::translate("Gui", "View", Q_NULLPTR));
+        actionStep->setShortcut(QApplication::translate("Gui", "Ctrl+T", 0));
+        actionHelp->setText(QApplication::translate("Gui", "Online Documentation", 0));
+        actionHelp->setShortcut(QApplication::translate("Gui", "Ctrl+D", 0));
+        actionAbout->setText(QApplication::translate("Gui", "About", 0));
+        actionScreenshot->setText(QApplication::translate("Gui", "Save Screenshot...", 0));
+        actionScreenshot->setShortcut(QApplication::translate("Gui", "Ctrl+I", 0));
+        actionMoreCells->setText(QApplication::translate("Gui", "Increase Population Limit", 0));
+        actionMoreCells->setShortcut(QApplication::translate("Gui", "Ctrl+M", 0));
+        actionZoom_In->setText(QApplication::translate("Gui", "Zoom In", 0));
+        actionZoom_In->setShortcut(QApplication::translate("Gui", "Ctrl+Shift+=", 0));
+        actionZoom_Out->setText(QApplication::translate("Gui", "Zoom Out", 0));
+        actionZoom_Out->setShortcut(QApplication::translate("Gui", "Ctrl+-", 0));
+        actionReset_Zoom->setText(QApplication::translate("Gui", "Reset Zoom", 0));
+        actionReset_Zoom->setShortcut(QApplication::translate("Gui", "Ctrl+0", 0));
+        actionDump->setText(QApplication::translate("Gui", "Save Colony Information...", 0));
+        menuFile->setTitle(QApplication::translate("Gui", "File", 0));
+        menuSimulation->setTitle(QApplication::translate("Gui", "Simulation", 0));
+        menuHelp->setTitle(QApplication::translate("Gui", "Help", 0));
+        menuView->setTitle(QApplication::translate("Gui", "View", 0));
     } // retranslateUi
 
 };

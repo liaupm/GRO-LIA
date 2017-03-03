@@ -28,7 +28,9 @@ class EColi : public Cell {
 
  public:
   EColi ( World * w, float x, float y, float a );
+  EColi ( World * w, float x, float y, float a, float div_mean, float div_variance);
   EColi ( World * w, ceBody* body , cg::Genome* genome );
+  EColi ( World * w, ceBody* body , cg::Genome* genome, float div_mean, float div_variance);
 
 #ifndef NOGUI
   void render ( Theme * theme, GroPainter * painter );
@@ -57,6 +59,7 @@ class EColi : public Cell {
   
  private:
   float volume, lambda, div_vol, div_length, init_length, length, d_length;
+  float sd, sm;
   int div_count;
   bool force_div;
 

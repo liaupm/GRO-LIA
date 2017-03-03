@@ -38,7 +38,9 @@ EColi::EColi ( World * w, float x, float y, float a) : Cell ( w ) {
   //, Cell::genome(w->getPlasmidPool()) {
 
   //float sd = get_param ( "ecoli_division_size_variance" );
-  float sd = get_param ( "ecoli_division_size_variance" );
+  sm = get_param ( "ecoli_division_length_mean" );
+  sd = get_param ( "ecoli_division_size_variance" );
+
   float sd_init = sd*4;
   div_length = get_param ( "ecoli_division_length_mean" ) - sd + frand() * sd * 2;
   init_length = get_param ("ecoli_init_length") - sd_init + frand() * sd_init * 2;
@@ -63,10 +65,67 @@ EColi::EColi ( World * w, float x, float y, float a) : Cell ( w ) {
 
 }
 
+EColi::EColi ( World * w, float x, float y, float a, float div_mean, float div_variance) : Cell ( w ) {
+  //, Cell::genome(w->getPlasmidPool()) {
+
+  //float sd = get_param ( "ecoli_division_size_variance" );
+  sd = div_variance;
+  sm = div_mean;
+  float sd_init = sd*4;
+  div_length = div_mean - sd + frand() * sd * 2;
+  init_length = get_param ("ecoli_init_length") - sd_init + frand() * sd_init * 2;
+  length= init_length;
+  d_length = 0;
+  d_vol = 0;
+
+  body = ceCreateBody(w->get_space(), DEFAULT_ECOLI_SCALE * init_length, ceGetVector2(x,y), a);
+
+  ceSetData(body, this);
+
+  int i;
+  for ( i=0; i<MAX_STATE_NUM; i++ ) q[i] = 0;
+  for ( i=0; i<MAX_REP_NUM; i++ ) rep[i] = 0;
+
+  div_count = 0;
+  force_div = false;
+
+  this->my_available = 0;
+
+  this->gt_inst = (log(this->div_length/this->init_length))/get_param ( "ecoli_growth_rate" );
+
+}
+
 EColi::EColi ( World * w, ceBody* body, cg::Genome *genome ) : Cell ( w, *genome, true ) {
 
-  float sd = get_param ( "ecoli_division_size_variance" );
+  sd = get_param ( "ecoli_division_size_variance" );
+  sm = get_param ( "ecoli_division_length_mean" );
   div_length = get_param ( "ecoli_division_length_mean" ) - sd + frand() * sd * 2;
+  init_length = body->length / DEFAULT_ECOLI_SCALE;
+  length= init_length;
+  d_length = 0;
+  d_vol = 0;
+
+  this->body = body;
+  ceSetData(body, this);
+
+  int i;
+  for ( i=0; i<MAX_STATE_NUM; i++ ) q[i] = 0;
+  for ( i=0; i<MAX_REP_NUM; i++ ) rep[i] = 0;
+
+  div_count = 0;
+  force_div = false;
+
+  this->my_available = 0;
+
+  this->gt_inst = (log(this->div_length/this->init_length))/get_param ( "ecoli_growth_rate" );
+
+}
+
+EColi::EColi ( World * w, ceBody* body, cg::Genome *genome, float div_mean, float div_variance ) : Cell ( w, *genome, true ) {
+
+  sd = div_variance;
+  sm = div_mean;
+  div_length = div_mean - sd + frand() * sd * 2;
   init_length = body->length / DEFAULT_ECOLI_SCALE;
   length= init_length;
   d_length = 0;
@@ -228,7 +287,8 @@ EColi * EColi::divide ( void ) {
 
     ceBody* daughterBody = ceDivideBody(body, da, frac);
 
-    EColi * daughter = new EColi ( world, daughterBody, &genome );
+    //EColi * daughter = new EColi ( world, daughterBody, &genome );
+    EColi * daughter = new EColi ( world, daughterBody, &genome, this->sm, this->sd);
 
     daughter->set_param_map ( get_param_map() );
 

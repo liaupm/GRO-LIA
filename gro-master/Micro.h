@@ -436,6 +436,16 @@ class World {
       return operons;
   }
 
+  inline void add_signal_prot(std::string prot)
+  {
+      signal_prots->push_back(prot);
+  }
+
+  inline std::vector<std::string>* get_signal_prots()
+  {
+      return(signal_prots);
+  }
+
 
   Grid<CSCell>* handler = nullptr;
   Grid<DBCell>* dhandler = nullptr;
@@ -497,6 +507,9 @@ class World {
 
   std::map<std::string, std::vector<float>> *proteins;
   std::map<std::string, operon_data> *operons ;
+
+  //Reset proteinas senal
+  std::vector<std::string> *signal_prots;
 
   cg::PlasmidPool plasmidCloud;
 

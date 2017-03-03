@@ -23,6 +23,7 @@ include standard
 internal unit ecoli ( [ ... ], 'a ) "ecoli";
 //internal unit ecoli ( [ ... ], string list, 'a ) "ecoli";
 internal unit c_ecolis ( int, real, real, real, string list, 'a) "c_ecolis";
+internal unit c_ecolis_growth ( int, real, real, real, real, real list, string list, 'a) "c_ecolis_growth";
 //internal unit c_ecolis ( int, real, real, real, 'a) "c_ecolis";
 // internal unit yeast ( [ ... ], 'a ) "yeast";
 

@@ -109,6 +109,19 @@ void Cell::setNProts(int v)
     this->n_prots = v;
 }
 
+void Cell::reset_signal_prots()
+{
+    for(auto x : *(world->get_signal_prots()))
+    {
+        genome.setProteinState(genome.getPlasmidPool()->getProteinByName(x),false);
+    }
+}
+
+void Cell::reset_signal_prot(std::string prot)
+{
+    genome.setProteinState(genome.getPlasmidPool()->getProteinByName(prot),false);
+}
+
 void Cell::conjugate(std::string name, double n_conj, int mode)
 {
     double r = fRand(0.00000000000000, 1.000000000000000);
@@ -221,6 +234,8 @@ void Cell::check_action()
     std::vector<uint64_t> action_proteins;
     uint64_t cell_proteins = genome.getProteins();
     uint64_t cond = 0, cell = 0;
+    std::string absorbQS("s_absorb_QS");
+    std::string getQS("s_get_QS");
 
     for(int row = 0; row < world->get_num_actions(); ++row)
     {
@@ -234,6 +249,12 @@ void Cell::check_action()
             std::list<std::string> pl = world->get_action_param(row);
             ((*this).*fp)(pl);
         }
+        /*else if((!world->get_action_name(row).compare(absorbQS) || !world->get_action_name(row).compare(getQS)) && cond != cell)
+        {
+            std::list<std::string> pl = world->get_action_param(row);
+            std::string sig_prot = pl.back();
+            reset_signal_prot(sig_prot);
+        }*/
     }
     //world->randomize_actions();
 }

@@ -58,6 +58,7 @@ World::World ( GroThread *ct ) : calling_thread ( ct ) , plasmidCloud(std::rando
 
     proteins = new std::map<std::string, std::vector<float>>;
     operons = new std::map<std::string, operon_data>;
+    signal_prots = new std::vector<std::string>;
 
     set_sim_dt ( DEFAULT_SIM_DT );
     set_chip_dt ( DEFAULT_CHIP_DT );
@@ -88,6 +89,7 @@ World::~World ( void ) {
 
     delete proteins;
     delete operons;
+    delete signal_prots;
 
     ceDestroySpace(space);
     csDestroyGrid(signalGrid);
@@ -332,6 +334,8 @@ void World::restart ( void ) {
 
     proteins->clear();
     operons->clear();
+    signal_prots->clear();
+    //signal_prots->clear();
     num_actions = 0;
     remove_all_actions();
     //action_info.clear();
@@ -929,14 +933,11 @@ ceVector2 World::chemostat_flow ( float, float y, float mag ) {
 
 void World::update ( void ) {
 
-
-
     ceStep(space);
 
     std::vector<Cell *>::iterator j;
     unsigned int n_bacteria = population->size();
     int index = 0, k=0, l=0; //m = 0;
-    double s_conc = 0;
     float* consumption;
 
     if(get_param("nutrients") == 1.0)
@@ -981,6 +982,8 @@ void World::update ( void ) {
             {
                 (*j)->getGenome().update(this->t, get_sim_dt());
             }
+            //Reset de proteinas de senal aqui?
+            (*j)->reset_signal_prots();
             if(!noaction)
             {
                 (*j)->check_action();

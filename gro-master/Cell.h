@@ -181,6 +181,9 @@ class Cell {
 
   inline cg::Genome& getGenome(void) {return genome;}
 
+  void reset_signal_prot(std::string prot);
+  void reset_signal_prots();
+
   //bool can_express_protein(int i); <-- OJO: tiene que ver con las señales que son necesarias para inhibir o expresar una proteina ej: IPTG vs LacI.
 
   void conjugate(std::string, double, int);

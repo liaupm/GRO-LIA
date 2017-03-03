@@ -272,6 +272,95 @@ Value * new_ecolis_random_circle ( std::list<Value *> * args, Scope * s ) {
     return new Value(Value::UNIT);
 }
 
+Value * new_ecolis_random_circle_growth ( std::list<Value *> * args, Scope * s ) {
+
+    std::list<Value *>::iterator i = args->begin();
+    std::list<Value *>::iterator h;
+    int j = 0;
+
+    ASSERT ( args->size() == 7 || args->size() == 8 );
+
+    int n_ecoli = (*i)->int_value();
+    i++;
+    double x_center = (*i)->real_value();
+    i++;
+    double y_center = (*i)->real_value();
+    i++;
+    double max_radius = (*i)->real_value();
+    i++;
+    double gt = (*i)->real_value();
+    i++;
+
+    Value* div_params;
+    div_params = *i;
+    i++;
+
+    Value* Plas;
+
+    /*Value* Prot;
+    Value* mrna;*/
+
+    std::vector<cg::Plasmid*>* insert_plasmids;
+
+    if(args->size() == 8)
+    {
+        Plas = *i; i++;
+        //Prot = *i; i++;
+        //mrna = *i; i++;
+    }
+
+    while(j < n_ecoli)
+    {
+        Program * prog = (*i)->program_value()->copy(); // this copy is deleted in ~Cell?
+
+        World * world = current_gro_program->get_world();
+
+        float x = 0, y = 0, theta = 0;
+
+        x = (float) fRand((x_center-max_radius), (x_center+max_radius));
+        y = (float) fRand((y_center-max_radius), (y_center+max_radius));
+
+        while((((x-x_center)*(x-x_center)) + ((y-y_center)*(y-y_center))) > (max_radius*max_radius))
+        {
+            x = (float) fRand((x_center-max_radius), (x_center+max_radius));
+            y = (float) fRand((y_center-max_radius), (y_center+max_radius));
+        }
+
+        theta = (float) fRand(0.0, 6.28);
+
+        h = div_params->list_value()->begin();
+
+        float sm = (float)((*h)->real_value());
+        h++;
+        float sd = (float)((*h)->real_value());
+        //world->set_param("ecoli_division_size_variance",(float)((*h)->real_value()));
+
+        EColi * c = new EColi ( world, x, y, theta, sm, sd);
+
+        c->set_param("ecoli_growth_rate",gt);
+
+
+
+        if(args->size() == 8)
+        {
+            for ( h=Plas->list_value()->begin(); h != Plas->list_value()->end(); h++ )
+            {
+                c->getGenome().add(world->getPlasmidPool()->getPlasmidByName((*h)->string_value()));
+            }
+        }
+
+        current_cell = c;
+        c->set_gro_program ( prog ); // prog is deleted if/when the cell is deleted in ~Cell
+        world->add_cell ( c );
+        prog->init_params ( current_gro_program->get_scope() );
+        prog->init ( current_gro_program->get_scope() );
+        current_cell = NULL;
+        j++;
+    }
+
+    return new Value(Value::UNIT);
+}
+
 /*
 Value * new_yeast ( std::list<Value *> * args, Scope * s ) {
 
@@ -336,7 +425,7 @@ Value *new_operon (std::list<Value *> * args, Scope * s )
 
     ASSERT ( args->size() == 1);
 
-    cg::Promoter::Gate gate = cg::Promoter::Gate::AND;;
+    cg::Promoter::Gate gate = cg::Promoter::Gate::AND;
     int counter = 0;
     //int which_riboswitch = 0;
     std::list<Value *>::iterator i = args->begin();
@@ -863,7 +952,6 @@ Value * assign_operons_to_plasmids (std::list<Value *> * args, Scope * s ) {
 
         for(unsigned int i = 0; i < gene_names.size(); ++i)
         {
-
             cg::Gene g(world->getPlasmidPool()->getProteinByName(it.second.output_protein_names[i]), it.second.act_times[i], it.second.act_vars[i]);
             genes.push_back(g);
         }
@@ -943,6 +1031,8 @@ Value * set_action (std::list<Value *> * args, Scope * s ) {
     std::list<std::string> params;
     std::string protein_name;
     std::string zero("0");
+    std::string absorbQS("s_absorb_QS");
+    std::string getQS("s_get_QS");
 
     protein_name.clear();
 
@@ -978,6 +1068,13 @@ Value * set_action (std::list<Value *> * args, Scope * s ) {
 
     world->add_action_data(func_name->string_value(), mask, values, params);
     world->setNoAction(false);
+
+    if((func_name->string_value().compare(absorbQS) == 0) ||
+       (func_name->string_value().compare(getQS) == 0))
+    {
+        world->add_signal_prot(params.back());
+    }
+
     return new Value ( Value::UNIT );
 }
 
@@ -2975,6 +3072,7 @@ void register_gro_functions ( void ) {
   // Cell types
   register_ccl_function ( "ecoli", new_ecoli );
   register_ccl_function ( "c_ecolis", new_ecolis_random_circle );
+  register_ccl_function ( "c_ecolis_growth", new_ecolis_random_circle_growth );
   //register_ccl_function ( "yeast", new_yeast );
 
   // Signals

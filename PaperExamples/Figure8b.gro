@@ -4,7 +4,7 @@ set ("population_max", 80000);
 
 //CellSignals settings
 set ("signals",1.0);
-set ("signals_draw", 0.0);
+set ("signals_draw", 1.0);
 
 //Kdiff, Kdeg, emit, absorb
 grid("continuous", "gro_original", 10, 10, 8);
@@ -71,28 +71,15 @@ genes([    name := "OperonDie3",
            transcription_factors := {"ahl3"}],
            prot_act_times := [times := {30.0}, variabilities := {2.0}],
            prot_deg_times := [times := {1000.0}, variabilities := {1.0}]]);
-           
-genes([		name := "OperonAhl1",
-			proteins := {"ahl1"},
-			promoter := [function := "SIGNAL"],
-			prot_act_times := [times := {0.1}, variabilities := {0.0}],
-			prot_deg_times := [times := {1.0}, variabilities := {0.0}]]);
 
-genes([		name := "OperonAhl2",
-			proteins := {"ahl2"},
-			promoter := [function := "SIGNAL"],
-			prot_act_times := [times := {0.1}, variabilities := {0.0}],
-			prot_deg_times := [times := {1.0}, variabilities := {0.0}]]);
-
-genes([		name := "OperonAhl3",
-			proteins := {"ahl3"},
-			promoter := [function := "SIGNAL"],
-			prot_act_times := [times := {0.1}, variabilities := {0.0}],
-			prot_deg_times := [times := {1.0}, variabilities := {0.0}]]);
            
-plasmids_genes ([ p1 := {"OperonProd1", "OperonDie1", "IAMP1", "OperonAhl1"},
+/*plasmids_genes ([ p1 := {"OperonProd1", "OperonDie1", "IAMP1", "OperonAhl1"},
                   p2 := {"OperonProd2", "OperonDie2", "IAMP2", "OperonAhl1", "OperonAhl2"},
-                  p3 := {"OperonProd3", "OperonDie3", "IAMP3", "OperonAhl2", "OperonAhl3"}]);
+                  p3 := {"OperonProd3", "OperonDie3", "IAMP3", "OperonAhl2", "OperonAhl3"}]);*/
+                  
+plasmids_genes ([ p1 := {"OperonProd1", "OperonDie1", "IAMP1"},
+                  p2 := {"OperonProd2", "OperonDie2", "IAMP2"},
+                  p3 := {"OperonProd3", "OperonDie3", "IAMP3"}]);
 		  	  
 
 //Actions
@@ -102,10 +89,10 @@ action({"iamp3"},"set_growth_rate",{"0.017"});
 action({"prod1"},"s_emit_signal",{tostring(s1),"2", "exact"});
 action({"die1"},"lose_plasmid",{"p1"});
 action({"-rfp"},"d_paint",{"0","-1","0","0"});
-action({"ahl1","prod2"},"s_emit_signal",{tostring(s2),"2", "exact"});
+action({"prod2"},"s_emit_signal",{tostring(s2),"2", "exact"});
 action({"die2"},"lose_plasmid",{"p2"});
 action({"-yfp"},"d_paint",{"0","0","-1","0"});
-action({"ahl2","prod3"},"s_emit_signal",{tostring(s3),"2", "exact"});
+action({"prod3"},"s_emit_signal",{tostring(s3),"2", "exact"});
 action({"die3"},"lose_plasmid",{"p3"});
 action({"-gfp"},"d_paint",{"-1","0","0","0"});
 action({"iamp1"},"s_get_QS",{tostring(s1),">","0.1","ahl1"});
