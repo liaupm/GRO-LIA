@@ -51,6 +51,7 @@ internal unit dump_single_reduced ( int ) "dump_single_reduced";
 internal unit dump_multiple ( ... ) "dump_multiple";
 internal unit dump_multiple_plasmids ( ... ) "dump_multiple_plasmids";
 internal real time() "time";
+internal unit select_random_cell() "select_random_cell";
 
 // Gene Expression
 internal unit genes ([...]) "genes";
