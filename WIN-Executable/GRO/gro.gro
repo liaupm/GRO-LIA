@@ -171,7 +171,7 @@ set ( "signal_element_size", 5 );
 set ( "ecoli_growth_rate", 0.0346574 );   // reactions/min
 set ( "ecoli_init_length", 2.0 );           //um
 set ( "ecoli_division_length_mean", 3.75 ); // um
-set ( "ecoli_division_size_variance", 0.5 ); // um
+set ( "ecoli_division_size_variance", 0.15 ); // um
 set ( "ecoli_diameter", 1.0 );            // um
 set ( "ecoli_scale", 10.0 );              // pixels/um
 
