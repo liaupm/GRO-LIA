@@ -1,0 +1,568 @@
+\documentclass[10pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage{transparent}
+\usepackage{eso-pic}
+\usepackage{float}
+\usepackage{wallpaper}
+%\usepackage[ruled,vlined,algochapter,dotocloa]{algorithm2e}
+\usepackage{fancyvrb}
+\usepackage{hyperref}
+
+%%\title{
+%%	{A new agent-based platform for simulating multicellular biocircuits with conjugative plasmids \\ %%\vspace{2cm}}	
+%%	{\includegraphics[scale=0.7]{UPM.png}} \\
+	%{\normalsize Universidad Polit\'{e}cnica de Madrid}
+%%}
+%%\author{Mart\'{i}n Eduardo Guti\'{e}rrez Pescarmona}
+%\college{Universidad Polit\'{e}cnica de Madrid}
+%\degree{Doctor of Philosophy}
+%%\date{\today}
+
+\begin{document}
+
+\title{ProSpec specification reference}
+\author{Mart\'{i}n Eduardo Guti\'{e}rrez Pescarmona}
+\maketitle
+
+The way of specifying simulations has been adapted to respond to a new paradigm in which structure and interactions of genetic circuits are stated (and behavior emerges). Other features and parameters that drive the simulations such as actions, variables and functions may also be part of this new specification. The new specification of GRO simulations is also compatible with the guarded command paradigm.
+In this document, the new syntax for simulation specifications will be described. Also, the new features will be identified to fully define the capabilities of the system. \newline
+
+
+\section{A GRO specification (with its new syntax)}
+A GRO specification is usually written in four parts:
+\begin{enumerate}
+	\item Library inclusion, parameter setting and definition of global variables and values
+	\item Genetic entities and their relationships
+	\item Actions associated to protein conditions
+	\item Top level programs (main function and other functions) and global control
+\end{enumerate}
+
+Let’s take a look into how these parts should be written. \newline
+
+\subsection{Library inclusion, parameter setting, definition of global variables and values}
+Generally, library inclusion is standard and is covered by:
+\newline
+
+\texttt{include gro}
+\newline
+
+That instruction is the first one that should be written in any specification. All of the instructions of the specification language may be used once this instruction has been added to the specification. Other libraries may be included by using the keyword \texttt{include}, however not many libraries have been developed for our new specification yet. \newline
+
+Once the libraries have been included in the specification, the parameters for the simulation must be set. To set the parameter values, the keyword \texttt{set} is used as in the following example, in which the duration of the timestep is set to 0.1 minutes:
+
+\begin{Verbatim}[obeytabs]
+set("dt", 0.1);
+\end{Verbatim}
+
+In the context of parameters, the specification syntax has two new groups of parameters. The first group is the group of parameters that control the nutrients in the simulator. The other group are the parameters and settings relative to environmental signal control in the simulation.
+\newline
+
+It is important to note that not all parameters have to be set explicitly. All of the parameters have a default value. Parameters must only be set when a specific value is needed for the parameter and that parameter will be used. In all of the examples in this document, an arbitrary value is set, just for the sake of exemplification. \newline
+
+The parameters for the nutrient module are the following ones. The description for each parameter is in a comment at the end of each line:
+
+\begin{Verbatim}[obeytabs]
+set("nutrients", 0.0);	// 0.0: nutrient module is off, 
+			// 1.0: nutrient module is on
+set("nutrient_amount", 200.0);	// Amount of nutrient units per 
+				// grid cell
+set("nutrient_consumption_rate", 0.033); // Units/dt per bacterium 
+					 // that are taken from
+					 // a grid cell
+set("nutrient_grid_length", 10.0);	// Number of cells 
+					// per square side
+					// in the grid
+set("nutrient_grid_cell_size", 30.0);	// Length of each side 
+					// of a grid cell [pixels]
+set("nutrient_consumption_mode", 0.0);	// 0: Homogeneous,
+					// 1: Gradient,
+					// 2: Random
+\end{Verbatim}
+
+In the case of environmental signal control, the following parameters can be set:
+
+\begin{Verbatim}[obeytabs]
+set("signals", 0.0);	// 0.0: signals module is off, 
+			// 1.0: signals module is on
+set("signals_draw", 1.0);	// 0.0: do not draw signals,
+				// 1.0: draw signals
+\end{Verbatim}
+
+Any signal definition should be placed after setting all the parameter values. In the following example, a signal identified by the symbol \texttt{s1} is defined and its parameters (diffusion coefficient, degradation coefficient and maximum concentration, respectively) are set:
+
+\begin{Verbatim}[obeytabs]
+// Grid settings (type of grid, diffusion method, 
+// grid length, grid cell size and neighborhood size) 
+// and signal parameters: diffusion, degradation.
+
+grid("continuous", "gro_original", 10, 10, 8);
+s1 := s_signal([kdiff := 0.02, kdeg := 0.005]);
+\end{Verbatim}
+
+Further along the specification, the symbol \texttt{s1} will always be used to refer to this signal. Examples of operations on these signals will be shown when we reach the action section of the specification. \newline
+
+Any other global variable may be defined at this stage also (such as a global time counter, strings that represent a route or filename, flags, for example), although it is not mandatory to do it in this section. \newline
+
+Once this section is defined, the next part of the specification consists of the genetic elements that will participate in the simulation.
+\newline 
+
+\subsection{Genetic entities and their relationships}
+
+The next section defines the core of the simulation. It specifies all of the genetic elements participating in the simulation, their dynamics and the relationships between them. Since the goal is to achieve a configurable environment, the vocabulary for names of genetic entities is open. This means that the programmer may choose a name for the elements, and that name shall act as an identifier throughout the specification. Therefore, the first step in this section is to identify the genetic elements, and define their dynamics and interactions.
+\newline
+
+An operon is a set of genes under the control of a single promoter. In this context, the operon is an intermediate stage of grouping, whereas the highest level of grouping comes in the form of plasmids. Both types of grouping are necessary to the specification and will be shown in this document. \newline
+
+Operon definition is done through the keyword \texttt{genes}. Each operon definition may hold a lot of information related to the operon, however, it is important to note that it is not mandatory to fill in all of the information. Whatever information is important should be filled in, and what is not specified takes a default value. Mandatory fields are indicated below. \newpage
+
+An example of operon specification is now shown and will be explained:
+
+\begin{Verbatim}[obeytabs]
+genes([	name := "OperonGfp",
+	proteins := {"gfp"},
+	promoter := [	function := "YES", 
+			transcription_factors := {"-LacI"},
+			noise := [ 	toOn := 0.001, 
+					toOff := 0.002,
+					noise_time:= 100.0]],
+	prot_act_times := [	times := {10.0},
+				variabilities := {2.0}],
+	prot_deg_times := [	times := {5.0},
+				variabilities := {1.0}]]);
+\end{Verbatim}
+
+This is a complete example of how an operon is defined. The information held by an operon is the following:
+\begin{itemize}
+	\item \texttt{name}: A name is assigned to the operon as an id. This id will later be used for setting up plasmids containing these operons. MANDATORY.
+	\item \texttt{proteins}: This field lists the output proteins that the operon expresses. Usually, the operon expresses at least one protein. The proteins expressed by the operon are listed by their name. MANDATORY.
+	\item \texttt{promoter}: This is a “superfield”, in the form of a record, that includes several configurable features of the promoter controlling the operon. The superfield itself is MANDATORY. The subfields composing \texttt{promoter} are described here:
+		\begin{itemize}
+			\item \texttt{function}: Sets the logic function according to which the promoter will operate. This function may be set to \texttt{YES}, \texttt{NOT}, \texttt{TRUE}, \texttt{FALSE}, \texttt{OR}, \texttt{XOR}, \texttt{AND} or \texttt{NAND}. Any logic function may take any number of \texttt{transcription\_factor} as input to the promoter. If this subfield is skipped, it is set to the default value \texttt{YES}.
+			\item \texttt{transcription\_factors}: It is a list of proteins that acts as the inputs for the promoter. These proteins are referred to by their name. The list may be of any size. Generally, this subfield is MANDATORY, however, when a \texttt{TRUE} or \texttt{FALSE} gate are defined for the \texttt{function} subfield, no \texttt{transcription\_factors} are required. Additionally, it is possible to specify the need for the absence of a protein by adding a \texttt{-} in front of the protein in question, like in the example \texttt{("{}-LacI"{})}.
+			\item \texttt{noise}: This subfield is a list of probabilities of failure of normal behavior. This is: the necessary conditions for the output proteins to be expressed at the current operon may be met, but still these proteins could fail to be expressed due to noise. Two failure cases may be set. The promoter is permanently set to off or it is permanently set to on. \texttt{toOff}  and \texttt{toOn} are the respective probabilities of occurrence over a time span of \texttt{noise\_time}. By default, these three subfield values are set to \texttt{0}. Note that \texttt{toOff} and \texttt{toOn} may go from \texttt{0.0} to \texttt{1.0}.
+		\end{itemize}
+	\item \texttt{prot\_act\_times}: This field specifies a list of protein expression \texttt{times} for the operon and their \texttt{variabilities} (in minutes). MANDATORY. In the example, activation times are specified for each of the proteins stated in the instructions. The first part (\texttt{times}) specifies protein activation times and summarizes to the following: ``Protein \texttt{gfp} has an activation mean time of \texttt{10.0} minutes and a standard deviation of \texttt{2.0} minutes''. It is possible to skip the variability definition altogether and have genetic elements activate always exactly at their average activation time.
+	\item \texttt{prot\_deg\_times}: Very much like in the case of \texttt{prot\_act\_times}, this field specifies a list of protein degradation \texttt{times} for the \texttt{proteins} and the  \texttt{variabilities} (in minutes) of the \texttt{times}. MANDATORY. \textbf{Note}: In case several different \texttt{prot\_deg\_times} are specified for the same protein, the lowest one will be the used one for all of the same \texttt{proteins}.	
+\end{itemize}
+
+The user may define as many operons as necessary. Once these operons are defined, they should be organized in \texttt{plasmids}. A plasmid may include any number of operons. The association between \texttt{plasmids} and operons (\texttt{genes}) is done through an instruction called \texttt{plasmids\_genes}. This instruction defines a list of operons associated to each \texttt{plasmid}. The plasmids will be identified by their names, and so will the operons. \newline
+
+An example is shown for clarity:
+
+\begin{Verbatim}[obeytabs]
+plasmids_genes ([	p1 := {"operon0","operon3"},
+			p2 := {"operon2"},
+			p6 := {"operon1","operon2","operon3"},
+			p3 := {"operon5"},
+			p5 := {"operon2","operon3","operon1"}]);
+\end{Verbatim}
+
+In this example, five plasmids are assigned different operons. Note that the same operon may be assigned to several plasmids. \newline
+
+As the last feature of genetic elements, environmental signals will be mentioned. Signals are transferred to a genetic element in the form of a \texttt{transcription\_factor}. Hence, a signal may be a trigger for the function of an operon. How the transfer is carried out will be discussed further along this document in the next section, related to \texttt{actions}. \newpage
+
+\subsection{Actions associated to protein conditions}
+
+Once the core of the elements and their interactions are in place, the actions that are executed by bacteria must be specified. The way in which this is done is by linking an \texttt{action} to a specific protein condition. The condition is expressed as a set composed of boolean states corresponding to protein expression. This represents the fact that whenever the condition is met, it will fire a certain \texttt{action} with its parameters. The keyword \texttt{action} is used to define the
+instruction linked to the condition. An example will now be shown and explained, and then all currently implemented \texttt{actions} will be listed:
+
+\begin{Verbatim}[obeytabs]
+action({"-ara","tetR"},"lose_plasmid",{"p5"});
+\end{Verbatim}
+
+This clause states that whenever the protein \texttt{ara} is absent (\texttt{-ara}) and protein \texttt{tetR} is present in a bacterium, plasmid \texttt{p5} is removed from the list of \texttt{plasmids} of the bacterium. The list containing \texttt{p5} is the list of parameters associated to the \texttt{action lose\_plasmid}. This parameter list is always passed in the form of a list of strings. Whichever \texttt{protein} that is NOT explicitly mentioned in the condition, is assumed to be of status ``don’t care''. This means, it does not affect the evaluation of the logical condition. \texttt{Protein} ids should come from the glossary and the specific \texttt{actions} to be executed will be listed now along with the parameters they take in:
+
+\begin{enumerate}
+	\item \texttt{paint (green, red, yellow, cyan)}: This \texttt{action} paints the bacterium according to the color combination given by the four color channels \texttt{green}, \texttt{red}, \texttt{yellow} and \texttt{cyan}. Valid values for these channels are integer numbers ranging from \texttt{0} to \texttt{50} (this is defined in \texttt{gro.gro}, these thresholds can be changed). Note that this instruction is absolute and imposes the color combination without regard for the previous color state in the bacterium.
+	\item \texttt{d\_paint (green, red, yellow, cyan)}: Unlike the previous \texttt{action}, this one adds (or subtracts) a certain amount of “channel concentration”. This is, it modifies the previous color distribution in the bacterium by adding or subtracting a difference in each of the channels. As in the previous case, the channels may take values ranging from \texttt{0} to \texttt{50} (integer).
+	\item \texttt{die}: This \texttt{action} kills the bacterium and makes it disappear from the simulation space. At this time, it is the only \texttt{action} that does not take a parameter list in.
+	\item \texttt{conjugate (plasmid, rate)}: \texttt{action} that copies a \texttt{plasmid} from a source bacterium (the one executing the \texttt{action}) to a random neighboring bacterium. This copy is done at an average \texttt{rate}, given by the average number of conjugations that occur during the lifetime of a bacterium.
+	\item \texttt{conjugate\_directed (plasmid, rate)}: Similar to the previous \texttt{action}, except that it considers a mechanism (called eex) in the destination bacterium that may not allow \texttt{plasmid} entry. Whenever entry is closed to the \texttt{plasmid} in the destination bacterium, this destination bacterium is not considered as a viable neighbor and therefore, the destination selection is directed toward all other viable neighbors. The \texttt{rate} parameter in this \texttt{action} has the same meaning as in the \texttt{conjugate action}.
+	\item \texttt{lose\_plasmid (plasmid)}:  \texttt{action} that removes \texttt{plasmid} from the list of \texttt{plasmids} residing in the bacterium.
+	\item \texttt{set\_eex (plasmid)}: Sets a constraint against \texttt{plasmid} entering the current bacterium (by conjugation).
+	\item \texttt{remove\_eex (plasmid)}: Removes the constraint placed upon \texttt{plasmid} that forbids its entry to the current bacterium (by conjugation).
+	\item \texttt{set\_growth\_rate (rate)}: Sets the  rate  at which a bacterium will grow. This rate is given in $\mu$m/min.
+	\item \texttt{emit\_cf (signal\_id, concentration)}: \texttt{action} that commands the current bacterium to emit \texttt{concentration} amount of the cross-feeding signal identified by \texttt{signal\_id}.
+	\item \texttt{get\_cf (signal\_id, benefit)}: This \texttt{action} reads the concentration of cross-feeding signal \texttt{signal\_id} in the medium. Depending on the value of the \texttt{benefit}  parameter (\texttt{1} simbolizes a positive interaction -growth increases- with the signal, \texttt{-1} simbolizes a negative interaction -growth decreases-), the growth rate of the bacterium will be changed.
+	\item \texttt{s\_emit\_signal (signal\_id, concentration, emission\_type)}: This \texttt{action} is associated to the emission of a signal (identified by \texttt{signal\_id}) \texttt{concentration} into the environment by a bacterium. It is emitted according to an \texttt{emission\_type}, being \texttt{"{}exact"{}}, \texttt{"{}area"{}} or \texttt{"{}average"{}}. The first type emits the \texttt{exact concentration} only at the cell under the center of the bacterium, the second one emits the given \texttt{concentration} to all grid cells in the \texttt{area} under the bacterium and the third mode emits to this same area, but the amount is an \texttt{average concentration} over the number of cells. These modes always have the same range meaning for all signal actions, but of course refer to the specific \texttt{action}.
+	\item \texttt{s\_absorb\_signal(signal\_id, concentration, absorption\_type)}: \texttt{action} that prompts the absorption of a given signal (identified by \texttt{signal\_id}) \texttt{concentration} from the environment. Whenever absorption is executed, the given \texttt{concentration} amount is absorbed, but if there is not enough signal at the specified location (or locations), whatever present \texttt{concentration} is absorbed. In addition, a fourth \texttt{type} is included in this case: \texttt{random}. This \texttt{absorption\_type} takes signal \texttt{concentration} from a randomly chosen cell in the area under the bacterium.
+	\item \texttt{s\_get\_signal(signal\_id)}: senses the concentration of a given signal (identified by \texttt{signal\_id}) from the environment.
+	\item \texttt{s\_set\_signal (signal\_id, concentration, x, y)}: Emission of a determinate \texttt{concentration} of a given signal(identified by \texttt{signal\_id}) into the environment (at location (\texttt{x},\texttt{y})).
+	\item \texttt{s\_emit\_cf(signal\_id, concentration, emission\_type)}: Refers to the emission of a signal (identified by \texttt{signal\_id}) into the environment by a given \texttt{concentration}. This directive is related to cross-feeding experiments, meaning the emitted concentration is scaled by a detrimental/beneficial coefficient that is associated to the bacterium’s metabolism. The \texttt{emission\_types} can be: \texttt{"{}exact"{}}, \texttt{"{}area"{}} or \texttt{"{}average"{}}.
+	\item \texttt{s\_absorb\_cf(signal\_id, concentration, benefit, absorption\_type)}: Absorbs a certain \texttt{concentration} of signal (identified by \texttt{signal\_id}) from the environment. This kind of absorption affects cross-feeding experiments. The absorbed concentration triggers a response (represented by \texttt{benefit}: \texttt{-1} is a detrimental effect and \texttt{1} is a beneficial effect) in the metabolism of the bacterium that absorbs. The
+absorbed amount of signal modulates the effect. Signal can be absorbed in four \texttt{types}:
+\texttt{"{}exact"{}}, \texttt{"{}area"{}}, \texttt{"{}average"{}} or \texttt{"{}random"{}}.
+	\item \texttt{s\_get\_cf(signal\_id, concentration, benefit)}: Reads a certain concentration of signal (identified by \texttt{signal\_id}) from the environment. This kind of absorption affects cross-feeding experiments. The read concentration triggers a response (represented by  \texttt{benefit}: \texttt{-1} is a detrimental effect and \texttt{1} is a beneficial effect) in the metabolism of the bacterium that is sensing. The read amount of signal modulates the effect.
+	\item \texttt{s\_absorb\_QS(signal\_id, comparison, threshold, protein)}: Absorbs a certain amount of signal (identified by \texttt{signal\_id}) from the environment. If the absorbed amount satisfies a condition given by a \texttt{comparison} sign (\texttt{"{}<"{}} or \texttt{"{}>"{}}) and a \texttt{threshold}, the genetic element \texttt{protein} is activated. Otherwise, \texttt{protein} is deactivated. \textbf{VERY IMPORTANT NOTE}: any \texttt{protein} defined in an action of this kind CANNOT be used in action conditions.
+	\item \texttt{s\_get\_QS(signal\_id, comparison, threshold, protein)}: Is the same \texttt{action} as the above, except that it does not absorb signal from the environment and only senses. The \textbf{VERY IMPORTANT NOTE} holds for \texttt{proteins} defined by this action as well.
+\end{enumerate}
+
+Several other \texttt{actions} may be implemented in the future, such as CRISPR related functions or phage control. It is very important to note that despite defining a new specification paradigm for controlling the bacteria in the simulations, this paradigm is still compatible with the previous one defined through guarded commands (meaning all (but one, due to constraints of the physical engine - chemostat mode) of the instructions that come from the original GRO still work within the scope of programs. \newpage
+
+\subsection{Top-level programs and global control}
+This section will simply be a reminder, since the definition of top-level programs and global control come from the original GRO specification.
+Programs are code spaces where conditions are evaluated and instructions are executed in response to these conditions (this is the guarded command paradigm). Most of the time, programs are assigned to a bacterium as their behavior. \newline
+
+Another important program is the \texttt{main} program. The \texttt{main} program controls the environment and the top level settings of the simulator. Examples of these settings may be the data gathering, iteration control of simulations, bacteria creation and placement. The only difference in the pre-existing instructions lie in the bacterial creation. The instructions \texttt{ecoli} and \texttt{c\_ecolis} have been modified to include more information to initialize bacteria in the simulation space. An example of each instruction will be shown now and will be briefly explained:
+
+\begin{Verbatim}[obeytabs]
+ecoli([y := 20, x := 50],{"p1"},program p());
+ecoli([y := 20, x := 50],program p());
+\end{Verbatim}
+
+This instruction creates a single ecoli agent. It receives two or three parameters. The first parameter is a record that specifies the physical definitions of the bacterium. These variables are: \texttt{x}, \texttt{y}, \texttt{theta} and \texttt{volume} (all float values). Next (optional) is the \texttt{plasmid\_list} parameter that specifies what \texttt{plasmids} are initially present in the bacterium. The \texttt{plasmids}, as always, are identified through their name (id). Finally, a \texttt{program} to run is associated to the bacterium. Note that when the new paradigm is used, this \texttt{program} is usually empty (\texttt{skip();}).
+
+\begin{Verbatim}[obeytabs]
+c_ecolis(200, 0, 0, 200, {"p1"}, program p());
+\end{Verbatim}
+
+\texttt{c\_ecolis} is an instruction that creates a group of bacteria in a random circular pattern in batch. Only the four first parameters will be described, as the two last ones are the same final parameters of the \texttt{ecoli} instruction with 3 parameters. The first parameter is \texttt{n} (integer). It determines the number of \texttt{ecolis} to create. The two following parameters are \texttt{x} and \texttt{y} (both floats), and establish where the circular pattern will be centered in the simulation space. The fourth parameter is the maximum \texttt{radius} in pixels (float) of the circular pattern up to where bacteria may be placed. The rest of the parameters have already been explained for the previous instruction and have the same meaning in this instruction. \newpage
+
+\section{Basic specification examples}
+A couple of real examples will be appended to demonstrate how all of the syntax discussed in this document may be used. \newline
+
+The first example, \texttt{newLtest.gro}, is a specification in which the features of the language are tested. It was designed as the skeleton for building the new specification language. Specifically, there is a large list of parameter setting, data collection (stored in files), circuit definition (very extensive, using most of the capabilities of the specification) and a showcase of several options of actions.
+
+\subsection{newLtest.gro}
+
+\begin{Verbatim}[obeytabs]
+include gro
+
+// default nutrient parameters
+set ("nutrients", 0.0); //0.0: off, 1.0: on
+set ("nutrient_amount", 200.0); //Arbitrary units
+set ("nutrient_consumption_rate", 0.033); // Units/dt per bacterium
+set ("nutrient_grid_length", 10.0); //In grid cells
+set ("nutrient_grid_cell_size", 30.0); //In pixels
+set ("nutrient_consumption_mode", 0.0); /*0: Homogeneous, 1:
+Gradient, 2: Random (between 50% of max concentration and max
+concentration)*/
+
+// Standard parameters
+set("dt", 0.1);
+set("population_max", 2000000);
+
+// Control variables
+t := 0;
+i := 0;
+n_run := 0;
+n_runs := 10;
+
+// Routes and filenames
+route1 := "/Users/a/b/c/";
+route2 := "/Users/a/b/d/";
+filename := "example"; //Filename to where data goes
+
+// File opening
+//fp := fopen (route1 <> filename <> tostring((i+1)) <> ".csv", "w");
+
+// Signal grid and signal definition
+grid("continuous", "gro_original", 10, 10, 8);
+cf1 := s_signal([kdiff := 0.02, kdeg := 0.005]);
+\end{Verbatim}
+
+\newpage
+
+\begin{Verbatim}[obeytabs]
+/* Example of cell program using selected cell for single dump (to
+file fp)*/
+/*program p() :=
+{
+	selected: 
+	{
+		dump_single(fp);
+	}
+};*/
+
+//Empty program example
+program p() :=
+{
+	skip(); 
+};
+
+// Movie program example
+/*program movie() :=
+{
+	t1 := 0;
+	set ("ecoli_growth_rate", 0.0);
+	
+	true: 
+	{
+		t1 := t1+dt
+	};
+	
+	t1 > 1 : 
+	{
+		snapshot ( route1 <> tostring(n) <> ".tif" ),
+		n := n + 1,
+		t1 := 0
+	}
+};*/
+	
+// Operon definition
+genes([	name := "operon0",
+		proteins := {"gfp","lacI","ara"},
+		promoter := [	function := "YES",
+				transcription_factors := {"-tetR"},
+				noise:= [	toOn := 0.02,
+						toOff := 0.2,
+						noise_time := 200.0]],
+		prot_act_times := [	times := {10.0, 3.0, 4.5},
+					variabilities := {2.0, 1.0, 1.1}],
+		prot_deg_times := [	times := {20.0, 50.0, 10.0},
+					variabilities := {3.0, 10.0, 2.0}]]);
+
+\end{Verbatim}
+
+\newpage
+\begin{Verbatim}[obeytabs]
+// Plasmid inclusion matrix (of operons) 
+plasmids_genes ([	p1 := {"operon0","operon3"},
+			p2 := {"operon2"},
+			p6 := {"operon1","operon2","operon3"},
+			p3 := {"operon5"},
+			p5 := {"operon2","operon3","operon1"}]);
+
+// Example of how to use several actions.
+action({"gfp"},"paint",{"500","0","0","0"});
+action({"-gfp"},"d_paint",{"-1","0","0","0"});
+action({"ara"},"conjugate",{"p5","1.0"});
+action({"lacI","cI"},"die",{"0"});
+action({"-ara","tetR"},"lose_plasmid",{"p5"});
+action({"gfp"},"set_growth_rate",{"0.011"});
+action({"-tetR","-ara"},"s_emit_cf",{tostring(cf1),"10.0","exact"});
+action({"tetR"},"s_get_cf",{tostring(cf1),"5","-1"});
+
+// Example of main program
+/*program main() :=
+{
+	t = 0: 
+	{
+		fprint(fp, "Time, LacI, not(TetR)\n");
+	}
+	
+	true: 
+	{
+		//dump_multiple(fp,{"LacI"},{"-TetR"});
+		t := t + dt;
+	}
+     
+	
+	t > 300 & n_run < n_runs:
+	{
+		reset();
+		reset_actions();
+		t := 0;
+		n_run := n_run + 1;
+		set ( "dt", 0.1 );
+		set ( "population_max", 2000000 );
+		/*fp := fopen ( route1 <> filename1 <> tostring(n_run) <>
+		".csv", "w" );*/
+		
+		/* E Coli creation. Parameters: [Location, angle, volume],
+		{plasmids included}, program to run*/
+		ecoli([y := 20, x := 50],{"p1"},program p());
+		
+\end{Verbatim}
+
+\newpage
+\begin{Verbatim}[obeytabs]
+		
+		/* E Coli mass creation. Parameters: number of E Coli to
+		create, x (center of cluster), y (center of cluster), 
+		maximum radius of cluster, {plasmids included}, 
+		program to run*/
+		c_ecolis(200, -50, -70, 30, {"p1"}, program p());
+	}
+	
+	t > 150 & n_run >= n_runs:
+	{
+		stop(); 
+	}*/
+	
+	/* E Coli creation. Parameters: [Location, angle, volume],
+	{plasmids included}, program to run*/
+	//ecoli([y := 20, x := 50],{"p1"},program p());
+	
+	/* E Coli mass creation. Parameters: number of E Coli to
+	create, x (center of cluster), y (center of cluster), 
+	maximum radius of cluster, {plasmids included}, 
+	program to run*/
+	c_ecolis(200, 0, 0, 200, {"p1"}, program p());
+//};
+\end{Verbatim}
+
+\newpage
+
+The second example is meant to test the implementation of the promoters for a circuits that have different actions associated to them, such as glowing or dying. Data is also collected in this example, and action showcase is present, although not all actions are used.
+
+\subsection{testConstitutive.gro}
+
+\begin{Verbatim}[obeytabs]
+include gro
+
+// Standard parameters
+set("dt", 0.1);
+set("population_max", 2000000);
+
+// default nutrient parameters
+set("nutrients", 0.0);	// 0.0: nutrient module is off, 
+			// 1.0: nutrient module is on
+set("nutrient_amount", 200.0);	// Amount of nutrient units per 
+				// grid cell
+set("nutrient_consumption_rate", 0.033); // Units/dt per bacterium 
+					 // that are taken from
+					 // a grid cell
+set("nutrient_grid_length", 10.0);	// Number of cells 
+					// per square side
+					// in the grid
+set("nutrient_grid_cell_size", 30.0);	// Length of each side 
+					// of a grid cell [pixels]
+set("nutrient_consumption_mode", 0.0);	// 0: Homogeneous,
+					// 1: Gradient,
+					// 2: Random
+
+set ( "ecoli_growth_rate", 0.0346574);
+set ( "signal_grid_width", 800 );
+set ( "signal_grid_height", 800 );
+set ( "signal_element_size", 5 );
+set ( "ecoli_growth_rate_max", 0.0346574);
+
+// Cross-feeding signal parameters: diffusion and degradation.
+grid("continuous", "gro_original", 10, 10, 8);
+cf1 := s_signal([kdiff := 1.0, kdeg := 0.001]);
+cf2 := s_signal([kdiff := 1.0, kdeg := 0.001]);
+\end{Verbatim}
+
+\newpage
+\begin{Verbatim}[obeytabs]
+// Operon definition
+genes([	name := "Operon1",
+		proteins := {"gfp", "rel1"},
+		promoter := [	function := "OR",
+				transcription_factors := {"lacI", "-rel2"}],
+		prot_act_times := [times := {0.5, 20.0}],
+		prot_deg_times := [times := {10.0, 10.0}]]);
+
+genes([	name := "Operon2",
+		proteins := {"rel2", "lacI"},
+		promoter := [	function := "TRUE"],
+		prot_act_times := [times := {0.2, 50.0}],
+		prot_deg_times := [times := {10.0, 10.0}]]);
+
+// Plasmid inclusion matrix (of operons)
+plasmids_genes ([	p1 := {"Operon1"},
+			p2 := {"Operon2"} ]);
+
+//ACTIONS
+
+//Express "color" with a fixed saturation. Code: {G,R,Y,C}
+action({"gfp","-rel2"},"paint",{"500","0","0","0"}); 
+
+//Express "color" gradually. Code: {G,R,Y,C}
+//action({"-gfp"},"d_paint",{"-1","0","0","0"}); 
+
+action({"rel2","-gfp"},"paint",{"0","500","0","0"}); 
+action({"rel2","gfp"},"paint",{"0","0","500","0"});
+//action({"gen2"},"paint",{"0","500","0","0"});
+//action({"-gfp"},"d_paint",{"-20","0","0","0"});
+
+//Plasmid id, conjugation rate
+//action({"rel1"},"conjugate",{"p1","1.0"});
+//action({"rel2"},"conjugate",{"p2","1.0"});
+
+action({"lacI"},"die");
+
+//Plasmid id
+//action({"-ara","tetR"},"lose_plasmid",{"p1"});
+
+//ln(2)/gt(min)[um/min]
+//action({"gfp"},"set_growth_rate",{"0.011"});
+
+//Cross-feeding emission tag, concentration, emission mode
+//action({"gen1"},"s_emit_cf",{tostring(cf1),"20","exact"});
+//action({"gen2"},"s_emit_cf",{tostring(cf2),"20","exact"});
+
+//Cross-feeding reception tag, concentration, benefit: 1. good, -1. toxin
+//action({"gen1"},"get_cf",{tostring(cf2),"20","-1"});
+//action({"gen2"},"get_cf",{tostring(cf1),"20","-1"});
+
+// Control variables
+t := 0;
+i := 0;
+n_run := 0;
+n_runs := 10;
+
+// Routes and filenames
+route1 := "/Users/a/b/c/";
+//route2 := "/Users/a/b/d/";
+filename := "constitutive"; //Filename to where data goes
+//fp := fopen (route1 <> filename <> tostring((i+1)) <> ".csv", "w");
+
+// File opening
+fp := fopen ( route1 <> filename <> ".csv", "w");
+
+///PROGRAMS
+//Empty program example
+program p() :=
+{
+	skip();
+};
+
+// Movie program example
+/*program movie() :=
+{
+	t1 := 0;
+	//The recording bacteria does not grow
+	set ("ecoli_growth_rate", 0.0);
+	
+	true:
+	{
+		t1 := t1+dt
+	};
+	
+	t1 > 1 :
+	{
+		snapshot ( route1 <> tostring(n) <> ".tif" ),
+		n := n + 1,
+		t1 := 0
+	}
+};*/
+\end{Verbatim}
+
+\newpage
+\begin{Verbatim}[obeytabs]
+/* Program using selected cell for single dump (to file fp). SINGLE
+MODE*/
+program p() :=
+{
+	selected:
+	{
+		//dump_single(fp);
+		die();
+	}
+};
+
+// Main program
+program main() :=
+{
+	/*t = 0: 
+	{
+		fprint(fp, "Time, LacI, not(TetR)\n"); // Prints headings
+	}*/
+	
+	/*true:
+	{
+		dump_multiple(fp,{"LacI"},{"-TetR"}); //MULTIPLE MODE
+		t := t + dt;
+	}*/
+	
+	c_ecolis(200, 0, 0, 80, {"p1"}, program p());
+	c_ecolis(100, 0, 0, 80, {"p2"}, program p());
+};
+\end{Verbatim}
+
+More examples can be found at \href{https://github.com/liaupm/GRO-LIA}{https://github.com/liaupm/GRO-LIA}  in the “PaperExamples” folder.
+
+\end{document}

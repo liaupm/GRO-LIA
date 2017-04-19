@@ -184,8 +184,6 @@ class Cell {
   void reset_signal_prot(std::string prot);
   void reset_signal_prots();
 
-  //bool can_express_protein(int i); <-- OJO: tiene que ver con las señales que son necesarias para inhibir o expresar una proteina ej: IPTG vs LacI.
-
   void conjugate(std::string, double, int);
 
   void check_action();
@@ -199,8 +197,7 @@ class Cell {
   void lose_plasmid_from_list(std::list<std::string> ls);
   void set_eex_from_list(std::list<std::string> ls);
   void remove_eex_from_list(std::list<std::string> ls);
-  void die_from_list(std::list<std::string> ls);//{this->mark_for_death();}
-  //void die_from_list();
+  void die_from_list(std::list<std::string> ls);
   void conj_and_paint_from_list(std::list<std::string> ls);
   void delta_paint_from_list(std::list<std::string> ls);
   void change_gt_from_list(std::list<std::string> ls);
@@ -221,9 +218,6 @@ class Cell {
   void s_emit_cross_feeding_signal_from_list(std::list<std::string> ls);
   void s_get_cross_feeding_signal_from_list(std::list<std::string> ls);
   void s_absorb_cross_feeding_signal_from_list(std::list<std::string> ls);
-
-  //HACER UNA ACCION QUE REPRIMA POR SEÑAL... Es parecida a s_absorb_QS o s_get_QS, pero que toma un gen como parametro y lo reprime o activa.
-
 
   void state_to_file(FILE *fp, std::vector<std::string>);
   void state_to_file_reduced(FILE *fp, std::vector<std::string>);

@@ -1,0 +1,8 @@
+\BOOKMARK [1][-]{section.1}{A GRO specification \(with its new syntax\)}{}% 1
+\BOOKMARK [2][-]{subsection.1.1}{Library inclusion, parameter setting, definition of global variables and values}{section.1}% 2
+\BOOKMARK [2][-]{subsection.1.2}{Genetic entities and their relationships}{section.1}% 3
+\BOOKMARK [2][-]{subsection.1.3}{Actions associated to protein conditions}{section.1}% 4
+\BOOKMARK [2][-]{subsection.1.4}{Top-level programs and global control}{section.1}% 5
+\BOOKMARK [1][-]{section.2}{Basic specification examples}{}% 6
+\BOOKMARK [2][-]{subsection.2.1}{newLtest.gro}{section.2}% 7
+\BOOKMARK [2][-]{subsection.2.2}{testConstitutive.gro}{section.2}% 8

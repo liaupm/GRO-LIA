@@ -1177,7 +1177,6 @@ bool World::snapshot ( const char * path ) {
 #define NUM_BINS 12
 static int bins[NUM_BINS+1];
 static char histbuf[100];
-int asd = 0;
 
 void World::histogram ( float x, float y, float width, float height, int channel ) {
 
