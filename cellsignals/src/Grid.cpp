@@ -17,6 +17,7 @@
 
 #include "Grid.h"
 #include <string>
+#include <stdlib.h>
 
 using namespace _structures;
 
@@ -54,7 +55,7 @@ Grid<C>::Grid(unsigned int len, unsigned int cellSize, int neighborhood) :len(le
 //   reactions = std::vector<GReaction*>();
 // }
 
-/*template <class C>
+template <class C>
 Grid<C>::~Grid() {
   for (unsigned int row = 0; row < this->len; row++) {
     this->grid[row].clear();
@@ -63,10 +64,10 @@ Grid<C>::~Grid() {
 
   std::vector<GSignal*>::iterator it_signal;
   for (it_signal = this->sig.begin(); it_signal != this->sig.end(); it_signal++) {
-        this->sig.clear();
-        vector<GSignal*>().swap(this->sig);
+    this->sig.clear();
+    vector<GSignal*>().swap(this->sig);
   }
-}*/
+}
 
 /************************** Getters and Setters ***********************/
 
@@ -182,7 +183,7 @@ unsigned int Grid<C>::_cellsToResize(vp_t vpoint) {
   }
 
   double max = std::max(max_dist_x, max_dist_y);
-  return floor(max/(this->getCellSize()))+1;
+  return (floor(max/(this->getCellSize()))+1)*3;
 }
 
 template <class C>
@@ -262,8 +263,8 @@ void Grid<C>::_find_and_setTimer(unsigned int row, unsigned int col, int signal_
    for (it_signal = this->sig.begin(); it_signal != this->sig.end(); it_signal++) {
     int id = (*it_signal)->get_id();
     if (signal_id == id) {
-      double kdeg = (*it_signal)->get_kdeg();
-      this->grid[row][col]->_setTimer(signal_id, kdeg);
+      //double kdeg = (*it_signal)->get_kdeg();
+      this->grid[row][col]->_setTimer(signal_id, 0);
     }
    }
 }
@@ -597,12 +598,13 @@ void Grid<C>::add_reaction(float rate, std::vector<int> reactants, std::vector<i
 
 template <class C>
 void Grid<C>::update(std::string method, float opt) {
+  // if (_signalReachBorder() && (this->getLen() >= 200))  {
+  //   exit(127);
+  // }
+
   if (_signalReachBorder()) {
     resize(ceil(_cellsToResizeBySignals()/2));
   }
-
-
-  
 
   if (this->reactions.size() > 0) {
     // Apply reaction
@@ -616,7 +618,7 @@ void Grid<C>::update(std::string method, float opt) {
   } else if (method == "digital") {
     // If the choosen method is "digital" then the float parameter
     // its going to be the probability.
-    random_walk(opt);
+    random_walk_block(opt);
   } else if (method == "digital_proportion") {
     proportional_random_walk(opt);
   }

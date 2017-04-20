@@ -281,6 +281,12 @@ void World::init () {
 
     free(difdeg);
 
+    const std::map<std::string,const cg::Plasmid*>& active_plasmids = this->plasmidCloud.getPlasmids();
+    for(auto it : active_plasmids)
+    {
+        conj_counts[it.second] = 0;
+    }
+
     if(program_restarted) //This is for restart
     {
         //program_initialized = false;
@@ -344,6 +350,7 @@ void World::restart ( void ) {
     s_signal_id = 0;
     noprot = true;
     noaction = true;
+    conj_counts.clear();
 
     if(get_param("signals") == 1.0)
     {

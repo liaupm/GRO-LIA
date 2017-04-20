@@ -52,6 +52,10 @@ double DBCell::getValue(int signal_id) {
 void DBCell::setValue(int signal_id, double concentration) {
   if (_existSignal(signal_id)) {
     this->local_signals[signal_id][0] = ((unsigned int) concentration);
+  } else {
+    this->insertSignal(signal_id);
+    this->local_signals[signal_id][0] = 0.0;
+    this->local_signals[signal_id][0] = ((unsigned int) concentration);
   }
 }
 

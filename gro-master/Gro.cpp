@@ -2659,6 +2659,69 @@ Value * gro_dump_multiple_plasmids(std::list<Value *> * args, Scope * s){
     return new Value ( Value::UNIT );
 }
 
+Value * gro_dump_cond_conjugations(std::list<Value *> * args, Scope * s){
+
+    World * world = current_gro_program->get_world();
+    int n = 0, j = 0;
+    int *counts;
+
+    std::list<Value *>* plasmid_vector;
+
+    std::list<Value *>::iterator i = args->begin();
+    std::list<Value *>::iterator plasmid_name;
+    int index = (*i)->int_value();
+    i++;
+    plasmid_vector = (*i)->list_value();
+
+    n = plasmid_vector->size();
+    counts = new int[n];
+
+    for(j=0; j<n; j++)
+    {
+        counts[j] = 0;
+    }
+    j = 0;
+
+    for(plasmid_name = plasmid_vector->begin(); plasmid_name != plasmid_vector->end(); plasmid_name++)
+    {
+        counts[j] = world->get_conj_count(world->getPlasmidPool()->getPlasmidByName((*plasmid_name)->string_value()));
+    }
+
+    fprintf(world->fileio_list[index],"%f, ", world->get_time());
+    for (j=0; j<n-1; j++)
+    {
+        fprintf(world->fileio_list[index],"%d, ", counts[j]);
+    }
+    fprintf(world->fileio_list[index],"%d\n", counts[j]);
+
+    fflush (world->fileio_list[index]);
+
+    delete counts;
+
+    return new Value ( Value::UNIT );
+
+
+    ////////////////
+    /*std::list<Value *>::iterator i = args->begin();
+    std::list<Value *>::iterator cds;
+    std::list<Value *>::iterator l;
+    std::string plasmid_name;
+    int plasmid_value = 0;
+    int index = (*i)->int_value();
+    i++;
+    cds = i;
+    const std::map<std::string, const Plasmid*> plasmids;
+    plasmids = world->getPlasmidPool()->getPlasmids();
+
+    for(auto it : plasmids)
+    {
+
+    }*/
+
+
+}
+
+
 /////////////////////////////////////////////////////////////////////////////////////////////
 // MISC
 // INTERNAL GRO FUNCTIONS
@@ -3130,6 +3193,7 @@ void register_gro_functions ( void ) {
   register_ccl_function ( "dump_single_reduced", gro_dump_single_reduced );
   register_ccl_function ( "dump_multiple", gro_dump_multiple );
   register_ccl_function ( "dump_multiple_plasmids", gro_dump_multiple_plasmids );
+  register_ccl_function ( "dump_cond_conjugations", gro_dump_cond_conjugations );
 
   // Gene expression
   register_ccl_function ( "genes", new_operon );

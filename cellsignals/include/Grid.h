@@ -52,7 +52,7 @@ class Grid {
   //Grid(unsigned int len=10, unsigned int cellSize=5);
   Grid(unsigned int len=10, unsigned int cellSize=5, int neighborhood=8);
   //Grid(int block_capacity, unsigned int len=10, unsigned int cellSize=5, int neighborhood=8);
-  //~Grid();
+  ~Grid();
 
   /******************** Getters and Setters **************************/
   
@@ -82,7 +82,9 @@ class Grid {
   double _signalC(int id, unsigned int row, unsigned int col);
 
   std::vector<C*> _getNonEmptyNeighbors(int id, unsigned int mainRow, unsigned int mainCol);
-
+  std::vector<std::tuple<unsigned int, unsigned int> > _getNeighbors(int mainRow, int mainCol);
+  std::tuple<std::tuple<unsigned int, unsigned int>, unsigned int> _getRandomNeighbor(std::vector<std::tuple<unsigned int, unsigned int>> neighbors);
+  void _applyDegradation(int id, int mainRow, int mainCol, double kdeg);
 
  /**************** Auxiliary functions -- Signals *********************/
 
@@ -118,6 +120,7 @@ class Grid {
 
   void original_diff(float dt);
   void matrix_diff(float dt);
+  void random_walk_block(float probability);
   void random_walk(float probability);
   void proportional_random_walk(float proportion);
 

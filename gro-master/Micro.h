@@ -446,6 +446,19 @@ class World {
       return(signal_prots);
   }
 
+  inline void inc_conj_count(const cg::Plasmid* plasmid)
+  {
+      int count;
+      count = conj_counts[plasmid];
+      count++;
+      conj_counts[plasmid] = count;
+  }
+
+  inline int get_conj_count(const cg::Plasmid* plasmid)
+  {
+      return(conj_counts[plasmid]);
+  }
+
 
   Grid<CSCell>* handler = nullptr;
   Grid<DBCell>* dhandler = nullptr;
@@ -512,6 +525,7 @@ class World {
   std::vector<std::string> *signal_prots;
 
   cg::PlasmidPool plasmidCloud;
+  std::map<const cg::Plasmid*, int> conj_counts;
 
   int stt_time;
 

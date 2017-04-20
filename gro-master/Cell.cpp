@@ -158,6 +158,7 @@ void Cell::conjugate(std::string name, double n_conj, int mode)
                         !((Cell*)(neighbors[target]->data))->is_eex(name))
                 {
                     ((Cell*)(neighbors[target]->data))->getGenome().add(toConj);
+                    world->inc_conj_count(toConj);
                 }
                 free(neighbors);
             }
@@ -180,6 +181,7 @@ void Cell::conjugate(std::string name, double n_conj, int mode)
                         !(((Cell*)(neighbors[target]->data))->is_eex(name)))
                 {
                     ((Cell*)(neighbors[target]->data))->getGenome().add(toConj);
+                    world->inc_conj_count(toConj);
                 }
                 free(neighbors);
             }

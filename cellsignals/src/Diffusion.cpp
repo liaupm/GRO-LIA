@@ -17,31 +17,38 @@
 
 #include "Grid.h"
 #include <tuple>
+#include <algorithm>
+#include <cmath>
 
 std::vector<std::tuple<unsigned int, unsigned int> > indexes;
+
+int timer = 0;
+
+std::vector<std::tuple<int,int> > order = {std::make_tuple(0,0), std::make_tuple(-1,1),std::make_tuple(1,0),std::make_tuple(-1,-1),std::make_tuple(0,1),std::make_tuple(0,-1),std::make_tuple(1,1),std::make_tuple(-1,0),std::make_tuple(1,-1)};
+
 
 template <class C>
 void Grid<C>::reaction(float dt) {
   for (int k = 0; k < this->reactions.size(); k++) {
     for (unsigned int row = 1; row < getLen()-1; row++) {
       for (unsigned int col = 1; col < getLen()-1; col++) {
-
+	float newRate = 1.0; 
 	// Calculare rate
 	for (int r = 0; r < reactions[k]->reactants.size(); r++) {
 	  int id_signal_reactive = reactions[k]->reactants[r];
-	  reactions[k]->rate *= _signalC(id_signal_reactive, row, col);
+	  newRate *= _signalC(id_signal_reactive, row, col);
 	}
 
 	// Decrease the reactants
 	for (int r = 0; r < reactions[k]->reactants.size(); r++) {
 	  int id_signal_reactive = reactions[k]->reactants[r];
-	  this->getCell(row, col)->incSignal(id_signal_reactive, (reactions[k]->rate * dt));
+	  this->getCell(row, col)->decSignal(id_signal_reactive, (newRate * dt));
 	}
 
 	// Increase the products
 	for (int p = 0; p < reactions[k]->products.size(); p++) {
 	  int id_signal_product = reactions[k]->products[p];
-	  this->getCell(row, col)->decSignal(id_signal_product, (reactions[k]->rate * dt));
+	  this->getCell(row, col)->incSignal(id_signal_product, (newRate * dt));
 	}
       }
     }
@@ -92,9 +99,9 @@ void Grid<C>::matrix_diff(float dt) {
 	for (unsigned int col = 1; col < getLen()-1; col++) {
 	  aux[row][col] = M[1][1]*kdiff*_signalC(id,row,col) - kdeg*_signalC(id,row,col);
 	  aux[row][col] += kdiff * (
-			    M[0][0]*_signalC(id,row+1,col-1) + M[0][1]*_signalC(id,row+1,col) + M[0][2]*_signalC(id,row+1,col+1)
+			    M[2][0]*_signalC(id,row+1,col-1) + M[2][1]*_signalC(id,row+1,col) + M[2][2]*_signalC(id,row+1,col+1)
 			    + M[1][0]*_signalC(id,row,col-1) + M[1][2]*_signalC(id,row,col+1)
-			    + M[2][0]*_signalC(id,row-1,col-1) + M[2][1]*_signalC(id,row-1,col) + M[2][2]*_signalC(id,row-1,col+1));
+			    + M[0][0]*_signalC(id,row-1,col-1) + M[0][1]*_signalC(id,row-1,col) + M[0][2]*_signalC(id,row-1,col+1));
 
 	}
       }
@@ -141,6 +148,230 @@ std::vector<C*> Grid<C>::_getNonEmptyNeighbors(int id, unsigned int mainRow, uns
   
   return nonEmptyCells;
 }
+
+// template <class C>
+// std::vector<C*> Grid<C>::_getNeighbors(int id, vector<vector<int> > block) {
+//   std::vector<C*> neighbors;
+
+//     // If neighborhood is of type Moore
+//   if (this->neighborhood == 8) {
+//     for (unsigned int row = 0; row < 3; row++) {
+//       for (unsigned int col = 0; col < 3; col++) {
+// 	if (row != 1 && col != 1) {
+// 	  neighbors.push_back(block[row][col]);
+// 	}
+//       }
+//     }
+//   }
+
+
+//   if (this->neighborhood == 4) {
+//     for (unsigned int row = 0; row < 3; row++) {
+//       for (unsigned int col = 0; col < 3; col++) {
+// 	if ((row != 1 && col != 1) && (row == 1 || col == 1)) {
+// 	  neighbors.push_back(block[row][col]);
+// 	}
+//       }
+//     }
+//   }
+
+//   return neighbors;
+// }
+
+// template <class C>
+// vector<vector<int> > Grid<C>::_getBLock(int id, unsigned int row, unsigned int col) {
+//   vector<vector<int> > newBlock(3, vector<int>(3));
+
+//   for (unsigned int i = 0; i < 3; i++) {
+//     for (unsigned int j = 0; j < 3; j++) {
+//       newBlock[i][j] = this->grid[row+i][col+j]->getValue(id)
+//     }
+//   }
+
+//   return newBlock;
+// }
+
+
+template <class C>
+std::vector<std::tuple<unsigned int, unsigned int> > Grid<C>::_getNeighbors(int mainRow, int mainCol) {
+  std::vector<std::tuple<unsigned int, unsigned int>> neighbors;
+  int len = this->len;
+
+  if (this->neighborhood == 8) {
+    for (unsigned int row = std::max(mainRow-1, 1); row <= std::min(mainRow+1, len-1); row++) {
+      for (unsigned int col = std::max(mainCol-1, 1); col <= std::min(mainCol+1, len-1); col++) {
+	if (row == mainRow && col == mainCol) { 
+	 continue;
+	}
+        std::tuple<unsigned int, unsigned int> position(row, col);
+	neighbors.push_back(position);
+      }
+    }
+  } else if (this->neighborhood == 4) {
+    for (unsigned int row = std::max(mainRow-1,1); row <= std::min(mainRow+1, len-1); row++) {
+      for (unsigned int col = std::max(mainCol-1,1); col <= std::min(mainCol+1, len-1); col++) {
+	if ((row != mainRow && col != mainCol) && (row == mainRow || col == mainCol)) {
+	  std::tuple<unsigned int, unsigned int> position(row, col);
+	  neighbors.push_back(position);
+	}
+      }
+    }	      
+  }
+  
+  return neighbors;
+}
+
+template <class C>
+std::tuple<std::tuple<unsigned int, unsigned int>, unsigned int> Grid<C>::_getRandomNeighbor(std::vector<std::tuple<unsigned int, unsigned int>> neighbors) {
+  std::random_device rd;
+  std::mt19937 rng(rd());
+
+  std::uniform_int_distribution<int> uni(0, neighbors.size()-1);
+  unsigned int randIndex = uni(rng);
+
+  std::tuple<std::tuple<unsigned int, unsigned int>, unsigned int> data(neighbors[randIndex], randIndex);
+  return data;
+}
+
+template <class C>
+void Grid<C>::_applyDegradation(int id, int mainRow, int mainCol, double kdeg) {
+  std::random_device rd;
+  std::mt19937 rng(rd());
+  std::uniform_real_distribution<double> real_uni(0.0,1.0);
+  int len = this->len;
+	    
+  for (unsigned int row = std::max(mainRow-1,1); row <= std::min(mainRow+1, len-1); row++) {
+      for (unsigned int col = std::max(mainCol-1,1); col <= std::min(mainCol+1, len-1); col++) {
+
+	// Update particle timer
+	unsigned int particle_timer = this->grid[row][col]->_getTimer(id);
+	auto sMap = this->grid[row][col]->getSignalsMap();
+	this->grid[row][col]->_setTimer(id, timer+1);
+
+	float exponential = (1-std::exp(-kdeg*particle_timer));
+	double r = real_uni(rng);
+
+	if (r < exponential) {
+	  this->grid[row][col]->setValue(id, 0);
+	  this->grid[row][col]->_setTimer(id, 0);
+	  auto it = sMap.find (id);
+ 	  if (it != sMap.end()) {
+	    sMap.erase(it);
+	  }
+	}	
+      }
+  }
+}
+
+template <class C>
+void Grid<C>::random_walk_block(float probability) {
+  std::random_device rd;
+  std::mt19937 rng(rd());
+
+  std::vector<GSignal*>::iterator it_signal;
+
+  for (it_signal = this->sig.begin(); it_signal != this->sig.end(); it_signal++) {
+    int id = (*it_signal)->get_id();
+    double kdiff = (*it_signal)->get_kdiff();
+    double kdeg = (*it_signal)->get_kdeg();
+    int cycles = (*it_signal)->get_cycles();
+
+    for (int ncycles = 0; ncycles < (*it_signal)->get_cycles(); ncycles++) {
+
+      for (unsigned int row = 1; row <= getLen()-4; row+=3) {
+	for (unsigned int col = 1; col <= getLen()-4; col+=3) {
+	  int incRow, incCol;
+	  std::tie(incRow, incCol) = order[timer];
+
+	  C* center = this->grid[row+incRow][col+incCol];
+
+	  //std::vector<C*> neigh = _getNeighbors(row+incRow, col+incCol);
+	  std::vector<std::tuple<unsigned int, unsigned int> > neigh = _getNeighbors(row+incRow, col+incCol);
+
+	  while (neigh.size() > 0) {
+	    // Get a random neighbor and apply diffusion
+	    std::tuple<unsigned int, unsigned int> chosenNeigh;
+	    unsigned int index; 
+
+	    std::tie(chosenNeigh, index) = _getRandomNeighbor(neigh);
+
+	    std::uniform_real_distribution<double> real_uni(0.0,1.0);
+	    double r = real_uni(rng);
+
+	    if (probability == 1 || r < probability*kdiff) {
+		unsigned int chosenRow = std::get<0>(chosenNeigh);
+		unsigned int chosenCol = std::get<1>(chosenNeigh);
+                int aux_center = this->grid[row+incRow][col+incCol]->getValue(id);
+                this->grid[row+incRow][col+incCol]->setValue(id, this->grid[chosenRow][chosenCol]->getValue(id));
+                this->grid[chosenRow][chosenCol]->setValue(id, aux_center);
+	    }
+
+	    // Remove the neighbor from vector
+	    neigh.erase(neigh.begin()+index);
+	  }
+
+	  _applyDegradation(id, row+incRow, col+incCol, kdeg);
+	}
+      }
+
+    }
+  }
+
+  // Update timer
+  if (timer == 8) {
+    timer = 0;
+  } else {
+    timer += 1;
+  }
+}
+
+
+// Version of diffusion inspired in a random walk
+// template <class C>
+// void Grid<C>::random_walk2(float probability) {
+//   std::random_device rd;
+//   std::mt19937 rng(rd());
+  
+//   std::vector<GSignal*>::iterator it_signal;
+//   //int n_blocks = floor(this->len/3)*2;
+//   for (it_signal = this->sig.begin(); it_signal != this->sig.end(); it_signal++) {
+//     int id = (*it_signal)->get_id();
+//     int cycles = (*it_signal)->get_cycles();
+
+//     for (int ncycles = 0; ncycles < (*it_signal)->get_cycles(); ncycles++) {
+
+//       for (unsigned int row = 1; row <= getLen()-4; row+=3) {
+// 	for (unsigned int col = 1; col <= getLen()-4; col+=3) {
+      
+// 	  // Get a new block to apply diffusion over it
+// 	  vector<vector<int> > block = getBlock(id, row, col);
+
+// 	  // Get the center cell of the block
+// 	  //C* block_center = block[1][1];
+
+// 	  // Get a vector with block center's neighbors
+// 	  std::vector<std::tuple<int,int> > neigh = getNeighbors(block);
+
+// 	  // While there exists more neighbors -> get a random one and
+// 	  // exchange particles with probability  p 
+// 	  while(neigh.size() > 0) {
+// 	    int choosenRow, choosenCol; 
+// 	    std::tie (choosenRow, choosenCol) = getRandomNeighbor(neigh);
+// 	    //C* neighbor = getRandomNeighbor(neigh);
+
+// 	    std::uniform_real_distribution<double> real_uni(0.0,1.0);
+// 	    r = real_uni(rng);
+	  
+// 	    if (probability == 1 || r < probability*(*it_signal)->get_kdiff()) {
+// 	      // Exchange particles
+	      
+// 	    }
+// 	  }
+// 	}
+//       }
+//     }
+//   }
+// }
 
 // Version of diffusion inspired in a random walk
 template <class C>

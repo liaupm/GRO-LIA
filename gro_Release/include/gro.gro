@@ -50,6 +50,7 @@ internal unit dump_single ( int ) "dump_single";
 internal unit dump_single_reduced ( int ) "dump_single_reduced";
 internal unit dump_multiple ( ... ) "dump_multiple";
 internal unit dump_multiple_plasmids ( ... ) "dump_multiple_plasmids";
+internal unit dump_cond_conjugations ( int, string list ) "dump_cond_conjugations";
 internal real time() "time";
 internal unit select_random_cell() "select_random_cell";
 
