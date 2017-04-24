@@ -412,11 +412,12 @@ void Cell::emit_cross_feeding_signal_from_list(std::list<std::string> ls)
     std::list<std::string>::iterator i = ls.begin();
     int signal_id = std::atoi((*i).c_str());
     float signal_conc = this->world->get_cross_feeding_max_emit(signal_id);
-    float dv_max = 0, dv = 0;
+    float dl_max = 0, dl = 0;
 
-    dv_max = get_param ( "ecoli_growth_rate" ) * this->get_volume() * this->world->get_sim_dt();
-    dv = this->get_d_vol();
-    this->cross_output_coefficient = dv/dv_max;
+    dl_max = get_param ( "ecoli_growth_rate" ) * this->get_volume() * this->world->get_sim_dt();
+    //dl = this->get_d_vol();
+    dl = this->get_d_length();
+    this->cross_output_coefficient = dl/dl_max;
     if(this->cross_output_coefficient > 1.0)
     {
         this->cross_output_coefficient = 1.0;
@@ -830,7 +831,8 @@ void Cell::s_emit_cross_feeding_signal_from_list(std::list<std::string> ls)
     coords[3] = y_length;
 
     dl_max = get_param ( "ecoli_growth_rate" ) * this->get_volume() * this->world->get_sim_dt();
-    dl = this->get_d_vol();
+    //dl = this->get_d_vol();
+    dl = this->get_d_length();
 
     this->cross_output_coefficient = dl/dl_max;
 

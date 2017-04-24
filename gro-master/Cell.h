@@ -142,7 +142,8 @@ class Cell {
   void set_conjugated_indicator ( int, bool );
   bool get_conjugated_indicator ( int ) const;*/
 
-  inline float get_d_vol ( void ) { return d_vol; }
+  //inline float get_d_vol ( void ) { return d_vol; }
+  inline float get_d_length ( void ) { return d_length; }
   inline float get_available( void ) { return my_available; }
 
   inline float get_input_cf_coef() { return cross_input_coefficient;}
@@ -282,7 +283,9 @@ class Cell {
   std::map<std::string,float> parameters;
 
   //float in_vol, gt_inst;
-  float in_vol, d_vol;
+  //float in_vol, d_vol;
+  float d_length;
+  float in_vol;
   float monod;
   float my_available;
 

@@ -58,7 +58,8 @@ class EColi : public Cell {
   void set_div_count ( int n ) { div_count = n; }
   
  private:
-  float volume, lambda, div_vol, div_length, init_length, length, d_length;
+  //float volume, lambda, div_vol, div_length, init_length, length, d_length;
+  float volume, lambda, div_vol, div_length, init_length, length;
   float sd, sm;
   int div_count;
   bool force_div;

@@ -61,7 +61,7 @@ internal unit action (...) "action";
 internal unit reset_actions () "reset_actions";
 
 // Nutrients
-//internal real my_d_vol () "my_d_vol";
+internal real my_d_length () "my_d_length";
 internal real available () "available";
 
 //Cellsignals

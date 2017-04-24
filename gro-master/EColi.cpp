@@ -46,7 +46,7 @@ EColi::EColi ( World * w, float x, float y, float a) : Cell ( w ) {
   init_length = get_param ("ecoli_init_length") - sd_init + frand() * sd_init * 2;
   length= init_length;
   d_length = 0;
-  d_vol = 0;
+  //d_vol = 0;
 
   body = ceCreateBody(w->get_space(), DEFAULT_ECOLI_SCALE * init_length, ceGetVector2(x,y), a);
 
@@ -76,7 +76,7 @@ EColi::EColi ( World * w, float x, float y, float a, float div_mean, float div_v
   init_length = get_param ("ecoli_init_length") - sd_init + frand() * sd_init * 2;
   length= init_length;
   d_length = 0;
-  d_vol = 0;
+  //d_vol = 0;
 
   body = ceCreateBody(w->get_space(), DEFAULT_ECOLI_SCALE * init_length, ceGetVector2(x,y), a);
 
@@ -103,7 +103,7 @@ EColi::EColi ( World * w, ceBody* body, cg::Genome *genome ) : Cell ( w, *genome
   init_length = body->length / DEFAULT_ECOLI_SCALE;
   length= init_length;
   d_length = 0;
-  d_vol = 0;
+  //d_vol = 0;
 
   this->body = body;
   ceSetData(body, this);
@@ -129,7 +129,7 @@ EColi::EColi ( World * w, ceBody* body, cg::Genome *genome, float div_mean, floa
   init_length = body->length / DEFAULT_ECOLI_SCALE;
   length= init_length;
   d_length = 0;
-  d_vol = 0;
+  //d_vol = 0;
 
   this->body = body;
   ceSetData(body, this);
@@ -251,7 +251,7 @@ void EColi::update ( void ) {
     this->gt_inst = (log(this->div_length/this->init_length))/(get_param ( "ecoli_growth_rate" )* this->monod * this->cross_input_coefficient);
 
     length += d_length;
-    d_vol = d_length;
+    //d_vol = d_length;
 
     ceGrowBody(body, 10*d_length);
 

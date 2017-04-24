@@ -1851,7 +1851,7 @@ Value * s_emit_cross_feeding_signal( std::list<Value *> * args, Scope * s )
     std::string emision_type = (*i)->string_value();
 
     float signal_conc = conc->real_value();
-    float dv_max = 0, dv = 0;
+    float dl_max = 0, dl = 0;
     double x = current_cell->get_x();
     double y = current_cell->get_y();
     double x_length = current_cell->get_vec_x();
@@ -1863,11 +1863,12 @@ Value * s_emit_cross_feeding_signal( std::list<Value *> * args, Scope * s )
     coords[2] = x_length;
     coords[3] = y_length;
 
-    dv_max = current_cell->get_param ( "ecoli_growth_rate" ) * current_cell->get_volume() * world->get_sim_dt();
+    dl_max = current_cell->get_param ( "ecoli_growth_rate" ) * current_cell->get_volume() * world->get_sim_dt();
 
-    dv = current_cell->get_d_vol();
+    //dl = current_cell->get_d_vol();
+    dl = current_cell->get_d_length();
 
-    current_cell->set_output_cf_coef( dv/dv_max );
+    current_cell->set_output_cf_coef( dl/dl_max );
 
     if(current_cell->get_output_cf_coef() > 1.0)
     {
@@ -2041,10 +2042,10 @@ Value * local_MOI ( std::list<Value *> * args, Scope * s )
 // EXTERNAL GRO FUNCTIONS (WITH CELLNUTRIENT)
 //
 
-/*Value * delta_vol ( std::list<Value *> * args, Scope * s )
+Value * delta_length ( std::list<Value *> * args, Scope * s )
 {
-    return new Value ( current_cell->get_d_vol() );
-}*/
+    return new Value ( current_cell->get_d_length() );
+}
 
 Value * my_available ( std::list<Value *> * args, Scope * s )
 {
@@ -3225,7 +3226,7 @@ void register_gro_functions ( void ) {
 
 
   // Growth
-  //register_ccl_function ( "my_d_vol", delta_vol );
+  register_ccl_function ( "my_d_length", delta_length );
   register_ccl_function ( "available", my_available );
 
   //Phages
