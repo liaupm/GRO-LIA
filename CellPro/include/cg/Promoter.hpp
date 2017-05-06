@@ -57,8 +57,8 @@ namespace cg
     , proteinValues(proteinValues)
     , gate(gate)
     , breakingState(breakingState)
-    , breakingToTrueTimeDistribution(1.0f/breakingToTrueRate)
-    , breakingToFalseTimeDistribution(1.0f/breakingToFalseRate)
+    , breakingToTrueTimeDistribution(1.0 / breakingToTrueRate)
+    , breakingToFalseTimeDistribution(1.0 / breakingToFalseRate)
     {
     }
 
@@ -115,7 +115,7 @@ namespace cg
             case AND:
                 return gateValue == gateMask;
             case NAND:
-                return gateValue == 0;
+                return gateValue != gateMask;
             case OR:
                 return gateValue != 0;
             case XOR:
